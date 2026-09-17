@@ -11,7 +11,6 @@ export const MODELS: ModelOption[] = [
   { id: "meta/llama-4-maverick", name: "Llama 4 Maverick" },
   { id: "mistral/mistral-large-3", name: "Mistral Large 3" },
   { id: "amazon/nova-2-lite", name: "Nova 2 Lite" },
-  { id: "bytedance/seed-1.8", name: "Seed 1.8" },
   { id: "deepseek/deepseek-v4-flash", name: "DeepSeek V4 Flash" },
   { id: "cohere/command-a", name: "Command A" },
   { id: "thinkingmachines/inkling", name: "Inkling" },
