@@ -62,7 +62,7 @@ class SwerveAudio {
     lp.type = "lowpass";
     lp.frequency.value = 160;
     const g = ctx.createGain();
-    g.gain.value = 0.028;
+    g.gain.value = 0.04;
     src.connect(lp).connect(g).connect(amb);
     src.start();
     const lfo = ctx.createOscillator();
@@ -76,28 +76,46 @@ class SwerveAudio {
     drone.type = "sine";
     drone.frequency.value = 48;
     const dg = ctx.createGain();
-    dg.gain.value = 0.014;
+    dg.gain.value = 0.016;
     drone.connect(dg).connect(amb);
     drone.start();
+
+    // distant traffic passing by, every so often
+    const passBy = () => {
+      if (!this.ctx) return;
+      this.whoosh(this.ctx.currentTime, 1.6, 0.03);
+      setTimeout(passBy, 18_000 + Math.random() * 22_000);
+    };
+    setTimeout(passBy, 8_000);
   }
 
-  // crosswalk ticks: a new dilemma is on the road
+  // a vehicle sweeping past: broad noise swell through a moving band
+  private whoosh(at: number, dur = 0.9, peak = 0.05) {
+    const ctx = this.ctx!;
+    const src = ctx.createBufferSource();
+    src.buffer = this.noise();
+    src.loop = true;
+    src.playbackRate.value = 1.4;
+    const bp = ctx.createBiquadFilter();
+    bp.type = "bandpass";
+    bp.Q.value = 0.7;
+    bp.frequency.setValueAtTime(240, at);
+    bp.frequency.exponentialRampToValueAtTime(620, at + dur * 0.45);
+    bp.frequency.exponentialRampToValueAtTime(180, at + dur);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, at);
+    g.gain.exponentialRampToValueAtTime(peak, at + dur * 0.4);
+    g.gain.exponentialRampToValueAtTime(0.0001, at + dur);
+    src.connect(bp).connect(g).connect(this.master!);
+    src.start(at);
+    src.stop(at + dur + 0.1);
+  }
+
+  // a new dilemma rolls onto the road: engine approach, no beeps
   approach() {
     const ctx = this.ctx;
     if (!ctx || !this.master) return;
-    for (let i = 0; i < 3; i++) {
-      const t = ctx.currentTime + i * 0.14;
-      const osc = ctx.createOscillator();
-      osc.type = "square";
-      osc.frequency.value = 1750;
-      const g = ctx.createGain();
-      g.gain.setValueAtTime(0.0001, t);
-      g.gain.exponentialRampToValueAtTime(0.028, t + 0.008);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.06);
-      osc.connect(g).connect(this.master);
-      osc.start(t);
-      osc.stop(t + 0.08);
-    }
+    this.whoosh(ctx.currentTime, 1.1, 0.055);
   }
 
   private screech(at: number, dur = 0.45) {
@@ -130,8 +148,8 @@ class SwerveAudio {
     lp.frequency.exponentialRampToValueAtTime(45, at + 0.7);
     const g = ctx.createGain();
     g.gain.setValueAtTime(0.0001, at);
-    g.gain.exponentialRampToValueAtTime(0.16, at + 0.015);
-    g.gain.exponentialRampToValueAtTime(0.0001, at + 0.8);
+    g.gain.exponentialRampToValueAtTime(0.34, at + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, at + 0.9);
     src.connect(lp).connect(g).connect(this.master!);
     src.start(at);
     src.stop(at + 0.9);
@@ -141,11 +159,27 @@ class SwerveAudio {
     thump.frequency.exponentialRampToValueAtTime(26, at + 0.4);
     const tg = ctx.createGain();
     tg.gain.setValueAtTime(0.0001, at);
-    tg.gain.exponentialRampToValueAtTime(0.14, at + 0.012);
-    tg.gain.exponentialRampToValueAtTime(0.0001, at + 0.5);
+    tg.gain.exponentialRampToValueAtTime(0.3, at + 0.01);
+    tg.gain.exponentialRampToValueAtTime(0.0001, at + 0.6);
     thump.connect(tg).connect(this.master!);
     thump.start(at);
-    thump.stop(at + 0.6);
+    thump.stop(at + 0.7);
+
+    // the stamp itself: a short dry thwack over the impact
+    const slap = ctx.createBufferSource();
+    slap.buffer = this.noise();
+    slap.playbackRate.value = 3;
+    const hp = ctx.createBiquadFilter();
+    hp.type = "bandpass";
+    hp.frequency.value = 900;
+    hp.Q.value = 1.2;
+    const sg = ctx.createGain();
+    sg.gain.setValueAtTime(0.0001, at + 0.02);
+    sg.gain.exponentialRampToValueAtTime(0.16, at + 0.03);
+    sg.gain.exponentialRampToValueAtTime(0.0001, at + 0.12);
+    slap.connect(hp).connect(sg).connect(this.master!);
+    slap.start(at + 0.02);
+    slap.stop(at + 0.15);
   }
 
   // the verdict: swerving screeches first, then the hit and the stamp
