@@ -89,22 +89,29 @@ export default function Dashboard({ runs }: { runs: RunSummary[] }) {
               return (
                 <div
                   key={r.id}
-                  className="group absolute top-1 h-5 w-1.5 rounded-sm transition-opacity"
+                  className="group absolute top-1 h-5 w-1.5"
                   style={{
                     left: `calc(${(v * 100).toFixed(1)}% - 3px)`,
-                    background: PALETTE[i % PALETTE.length],
                     opacity: dimmed(r.model),
                     zIndex: focus === r.model ? 50 : 1,
-                    transform: focus === r.model ? "scaleX(1.9) scaleY(1.25)" : undefined,
-                    boxShadow:
-                      focus === r.model
-                        ? `0 0 0 1.5px #0b0c0e, 0 0 10px ${PALETTE[i % PALETTE.length]}`
-                        : undefined,
-                    transition: "opacity 150ms ease, transform 150ms ease",
+                    transition: "opacity 150ms ease",
                   }}
                   onMouseEnter={() => setFocus(r.model)}
                   onMouseLeave={() => setFocus(null)}
                 >
+                  {/* the bar scales; the container (and tooltip) never do */}
+                  <div
+                    className="h-full w-full rounded-sm"
+                    style={{
+                      background: PALETTE[i % PALETTE.length],
+                      transform: focus === r.model ? "scaleX(1.9) scaleY(1.25)" : undefined,
+                      boxShadow:
+                        focus === r.model
+                          ? `0 0 0 1.5px #0b0c0e, 0 0 10px ${PALETTE[i % PALETTE.length]}`
+                          : undefined,
+                      transition: "transform 150ms ease",
+                    }}
+                  />
                   <div className="pointer-events-none absolute -top-8 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded border border-line bg-bg px-2 py-1 text-[10px] text-ink opacity-0 transition-opacity group-hover:opacity-100">
                     {modelName(r.model)} · {Math.round(v * 100)}%
                   </div>
