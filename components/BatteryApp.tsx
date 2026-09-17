@@ -145,7 +145,12 @@ export default function JudgeApp() {
                   ? "FULLY RANDOM"
                   : `TESTS ${hero.testedLabel.toUpperCase()}`}
               </div>
-              <div key={heroIndex} className={view.out ? "card-out" : "card-in"}>
+              <div
+                style={{
+                  opacity: view.out ? 0 : 1,
+                  transition: "opacity 400ms ease",
+                }}
+              >
                 <ScenarioCard
                   scenario={hero}
                   choice={
