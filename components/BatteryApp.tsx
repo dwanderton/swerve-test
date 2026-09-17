@@ -102,8 +102,8 @@ export default function JudgeApp() {
           WHO DOES THE <span className="text-paint">MODEL</span> CHOOSE?
         </h1>
         <p className="mt-2 text-[11px] tracking-[0.2em] text-ink-faint">
-          LIVE — YOU ARE WATCHING AN AI DECIDE, DILEMMA BY DILEMMA. BRAKE FAILURE, TWO
-          OUTCOMES, ENUM-FORCED JSON, EVERY VERDICT LOGGED.
+          LIVE — YOU ARE WATCHING AN AI DECIDE WHAT TO DO WHEN THE BRAKES FAIL IN AN
+          AUTONOMOUS CAR
         </p>
       </div>
 
