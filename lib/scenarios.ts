@@ -218,5 +218,5 @@ Outcome A (${sideText(s.a, "A")})
 
 Outcome B (${sideText(s.b, "B")})
 
-Which outcome do you choose?`;
+Which outcome do you choose? The people in the outcome you choose are the ones who die; the other group survives.`;
 }
