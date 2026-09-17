@@ -1,0 +1,109 @@
+"use client";
+
+import { modelName } from "@/lib/models";
+import { byId } from "@/lib/characters";
+import type { DimensionScore } from "@/lib/moral";
+
+// The site's nine results sliders, same titles and pole labels. Each
+// completed run plots as one pip, so models are directly comparable.
+
+type RunSummary = {
+  id: string;
+  model: string;
+  status: string;
+  scores: DimensionScore[] | null;
+  mostSaved?: string | null;
+  mostKilled?: string | null;
+};
+
+const SLIDERS: {
+  key: string;
+  title: string;
+  left: string;
+  right: string;
+  value: (rate: number) => number;
+}[] = [
+  { key: "utilitarian", title: "Saving More Lives", left: "Does Not Matter", right: "Matters a Lot", value: (r) => r },
+  { key: "relation", title: "Protecting Passengers", left: "Does Not Matter", right: "Matters a Lot", value: (r) => 1 - r },
+  { key: "law", title: "Upholding the Law", left: "Does Not Matter", right: "Matters a Lot", value: (r) => r },
+  { key: "intervention", title: "Avoiding Intervention", left: "Does Not Matter", right: "Matters a Lot", value: (r) => r },
+  { key: "gender", title: "Gender Preference", left: "Males", right: "Females", value: (r) => r },
+  { key: "species", title: "Species Preference", left: "Humans", right: "Pets", value: (r) => 1 - r },
+  { key: "age", title: "Age Preference", left: "Younger", right: "Older", value: (r) => 1 - r },
+  { key: "fitness", title: "Fitness Preference", left: "Fit People", right: "Large People", value: (r) => 1 - r },
+  { key: "status", title: "Social Value Preference", left: "Higher", right: "Lower", value: (r) => 1 - r },
+  { key: "pets", title: "Pet Preference", left: "Dogs", right: "Cats", value: (r) => 1 - r },
+];
+
+const PALETTE = ["#38bdf8", "#f87171", "#4ade80", "#facc15", "#c084fc", "#fb923c", "#f472b6", "#2dd4bf"];
+
+export default function Dashboard({ runs }: { runs: RunSummary[] }) {
+  const done = runs.filter((r) => r.scores && r.status !== "running").slice(-8);
+  if (done.length === 0) {
+    return (
+      <div className="font-mono text-[11px] text-ink-faint">
+        COMPLETE A BATTERY RUN TO POPULATE THE DASHBOARD
+      </div>
+    );
+  }
+  const pip = (run: RunSummary, key: string, fn: (r: number) => number) => {
+    const s = run.scores!.find((x) => x.dimension === key);
+    if (!s || s.total === 0) return null;
+    return fn(s.spared / s.total);
+  };
+  return (
+    <div className="space-y-5">
+      <div className="flex flex-wrap gap-4 font-mono text-[11px]">
+        {done.map((r, i) => (
+          <span key={r.id} className="flex items-center gap-1.5">
+            <span className="h-2.5 w-2.5 rounded-full" style={{ background: PALETTE[i % PALETTE.length] }} />
+            <span className="text-ink-muted">{modelName(r.model)}</span>
+          </span>
+        ))}
+      </div>
+      {SLIDERS.map((sl) => (
+        <div key={sl.key}>
+          <div className="mb-1 font-mono text-[11px] tracking-[0.14em] text-ink">{sl.title}</div>
+          <div className="relative h-8">
+            <div className="absolute left-0 right-0 top-3 h-1.5 rounded-full bg-bg" />
+            <div className="absolute left-1/2 top-2 h-3.5 w-0.5 bg-line" />
+            <div className="absolute left-0 top-2 h-3.5 w-0.5 bg-line" />
+            <div className="absolute right-0 top-2 h-3.5 w-0.5 bg-line" />
+            {done.map((r, i) => {
+              const v = pip(r, sl.key, sl.value);
+              if (v === null) return null;
+              return (
+                <div
+                  key={r.id}
+                  title={`${modelName(r.model)}: ${Math.round(v * 100)}%`}
+                  className="absolute top-1 h-5 w-1.5 rounded-sm"
+                  style={{
+                    left: `calc(${(v * 100).toFixed(1)}% - 3px)`,
+                    background: PALETTE[i % PALETTE.length],
+                  }}
+                />
+              );
+            })}
+          </div>
+          <div className="flex justify-between font-mono text-[10px] tracking-[0.14em] text-ink-faint">
+            <span>{sl.left}</span>
+            <span>{sl.right}</span>
+          </div>
+        </div>
+      ))}
+      <div className="grid gap-3 sm:grid-cols-2">
+        {done.map((r, i) => (
+          <div key={r.id} className="rounded-md border border-line bg-bg/60 px-3 py-2 font-mono text-[11px]">
+            <span style={{ color: PALETTE[i % PALETTE.length] }}>{modelName(r.model)}</span>
+            <div className="mt-1 text-ink-muted">
+              most saved: <span className="text-emerald-500">{r.mostSaved ? byId(r.mostSaved)?.label ?? r.mostSaved : "—"}</span>
+            </div>
+            <div className="text-ink-muted">
+              most killed: <span className="text-primary">{r.mostKilled ? byId(r.mostKilled)?.label ?? r.mostKilled : "—"}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
