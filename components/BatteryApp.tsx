@@ -7,6 +7,8 @@ import type { DimensionScore, MoralRun } from "@/lib/moral";
 import Dashboard from "./Dashboard";
 import ScenarioCard from "./ScenarioCard";
 import { SESSION_SIZE, buildBattery } from "@/lib/scenarios";
+import { CharacterGlyph } from "./glyphs";
+import { byId } from "@/lib/characters";
 
 type Summary = {
   id: string;
@@ -20,10 +22,22 @@ type Summary = {
   startedAt: number;
 };
 
+type HomeSummary = {
+  verdicts: number;
+  models: number;
+  mostSaved: string | null;
+  mostKilled: string | null;
+};
+
+const SEED = 1; // fixed: every model faces the identical dilemma sequence
+
 export default function JudgeApp() {
-  const { data, act } = usePoll<{ run: MoralRun | null; runs: Summary[] }>("/api/moral");
+  const { data, act } = usePoll<{
+    run: MoralRun | null;
+    summary?: HomeSummary;
+    runs: Summary[];
+  }>("/api/moral");
   const [model, setModel] = useState("anthropic/claude-haiku-4.5");
-  const [seed, setSeed] = useState(1);
   const [sessions, setSessions] = useState(20);
   const run = data?.run ?? null;
   const total = run ? run.sessions * SESSION_SIZE : 0;
@@ -79,34 +93,37 @@ export default function JudgeApp() {
         </p>
       </div>
 
+      {data?.summary && data.summary.verdicts > 0 && (
+        <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4">
+          <StatTile label="VERDICTS RENDERED" value={String(data.summary.verdicts)} />
+          <StatTile label="MODELS JUDGED" value={String(data.summary.models)} />
+          <CharTile label="MOST SPARED" id={data.summary.mostSaved} tone="walk" />
+          <CharTile label="MOST KILLED" id={data.summary.mostKilled} tone="blood" />
+        </div>
+      )}
+
       <div className="mt-6 flex flex-wrap items-end gap-3 rounded-lg border border-line bg-surface/50 p-4">
         <ModelSelect value={model} onChange={setModel} label="MODEL ON TRIAL" />
         <label className="flex flex-col gap-1">
-          <span className="text-[10px] tracking-[0.24em] text-ink-faint">SEED</span>
-          <input
-            type="number"
-            value={seed}
-            onChange={(e) => setSeed(Number(e.target.value))}
-            className="w-20 rounded border border-line bg-bg px-2 py-1.5 text-[11px] text-ink outline-none focus:border-paint"
-          />
-        </label>
-        <label className="flex flex-col gap-1">
-          <span className="text-[10px] tracking-[0.24em] text-ink-faint">SESSIONS</span>
-          <input
-            type="number"
+          <span className="text-[10px] tracking-[0.24em] text-ink-faint">DILEMMAS</span>
+          <select
             value={sessions}
-            min={1}
-            max={200}
             onChange={(e) => setSessions(Number(e.target.value))}
-            className="w-20 rounded border border-line bg-bg px-2 py-1.5 text-[11px] text-ink outline-none focus:border-paint"
-          />
+            className="rounded border border-line bg-bg px-2 py-1.5 text-[11px] text-ink outline-none focus:border-paint"
+          >
+            {[10, 20, 50, 100, 200].map((s) => (
+              <option key={s} value={s}>
+                {s * SESSION_SIZE}
+              </option>
+            ))}
+          </select>
         </label>
         <Btn
           tone="go"
           disabled={judging}
-          onClick={() => act({ action: "start", model, seed, sessions })}
+          onClick={() => act({ action: "start", model, seed: SEED, sessions })}
         >
-          JUDGE ({sessions * SESSION_SIZE} DILEMMAS)
+          JUDGE
         </Btn>
         {judging && <Btn onClick={() => act({ action: "stop" })}>STOP</Btn>}
         {run && (
@@ -170,10 +187,53 @@ export default function JudgeApp() {
       )}
 
       <div className="mt-8">
+        <div className="mb-2 flex justify-end">
+          <a
+            href="/api/moral/export"
+            download="swerve-results.jsonl"
+            className="rounded border border-line px-3 py-1.5 text-[10px] tracking-[0.24em] text-ink-muted hover:border-ink-faint hover:text-ink"
+          >
+            ⬇ DOWNLOAD FULL RESULTS (JSONL)
+          </a>
+        </div>
         <Panel title="RESULTS — WHERE EACH MODEL LIES">
           <Dashboard runs={data?.runs ?? []} />
         </Panel>
       </div>
     </main>
+  );
+}
+
+
+function StatTile({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg border border-line bg-surface/50 px-4 py-3">
+      <div className="text-[9px] tracking-[0.28em] text-ink-faint">{label}</div>
+      <div className="display mt-1 text-3xl leading-none text-paint">{value}</div>
+    </div>
+  );
+}
+
+function CharTile({
+  label,
+  id,
+  tone,
+}: {
+  label: string;
+  id: string | null;
+  tone: "walk" | "blood";
+}) {
+  return (
+    <div className="flex items-center gap-3 rounded-lg border border-line bg-surface/50 px-4 py-3">
+      {id && <CharacterGlyph id={id} size={40} />}
+      <div>
+        <div className="text-[9px] tracking-[0.28em] text-ink-faint">{label}</div>
+        <div
+          className={`display mt-1 text-sm leading-tight ${tone === "walk" ? "text-walk" : "text-primary"}`}
+        >
+          {id ? (byId(id)?.label ?? id).replace(/^an? /, "").toUpperCase() : "—"}
+        </div>
+      </div>
+    </div>
   );
 }

@@ -11,9 +11,34 @@ import {
 export async function GET() {
   const state = readState<MoralState>("moral");
   if (state?.run?.status === "running") tryStep("moral", stepBattery);
+  const all = readRuns<MoralRun>("moral");
+  // home-page summary across every completed run
+  const charTotals: Record<string, { saved: number; killed: number }> = {};
+  let verdicts = 0;
+  for (const run of all) {
+    verdicts += run.answers.filter((a) => a.choice !== "ERROR").length;
+    for (const [id, s] of Object.entries(run.characterStats ?? {})) {
+      const t = (charTotals[id] ??= { saved: 0, killed: 0 });
+      t.saved += s.saved;
+      t.killed += s.killed;
+    }
+  }
+  const eligible = Object.entries(charTotals).filter(([, s]) => s.saved + s.killed >= 10);
+  const rate = (s: { saved: number; killed: number }) => s.saved / (s.saved + s.killed);
+  const summary = {
+    verdicts,
+    models: new Set(all.map((r) => r.model)).size,
+    mostSaved: eligible.length
+      ? eligible.sort((x, y) => rate(y[1]) - rate(x[1]))[0][0]
+      : null,
+    mostKilled: eligible.length
+      ? eligible.sort((x, y) => rate(x[1]) - rate(y[1]))[0][0]
+      : null,
+  };
   return NextResponse.json({
     run: state?.run ?? null,
-    runs: readRuns<MoralRun>("moral").map((r) => ({
+    summary,
+    runs: all.map((r) => ({
       id: r.id,
       model: r.model,
       seed: r.seed,
