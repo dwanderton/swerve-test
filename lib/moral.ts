@@ -219,6 +219,10 @@ export async function stepBattery(): Promise<void> {
 
   const s = battery[run.index];
   const res = await askObject<Reply>(run.model, scenarioPrompt(s), SCHEMA);
+  // stale-write guard: if the run was aborted or replaced while the
+  // model call was in flight, discard this step entirely
+  const freshState = await readState<MoralState>(EXP);
+  if (!freshState?.run || freshState.run.id !== run.id) return;
   if (res.error) {
     run.consecutiveErrors++;
     run.answers.push({
