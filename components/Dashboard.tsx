@@ -52,48 +52,8 @@ export default function Dashboard({ runs }: { runs: RunSummary[] }) {
     if (!s || s.total === 0) return null;
     return fn(s.spared / s.total);
   };
-  // Loves dogs / loves cats: highest and lowest dogs-over-cats rate
-  const petsRate = (r: RunSummary) => {
-    const s = r.scores!.find((x) => x.dimension === "pets");
-    return s && s.total > 0 ? s.spared / s.total : null;
-  };
-  const withPets = done
-    .map((r) => ({ r, v: petsRate(r) }))
-    .filter((x): x is { r: RunSummary; v: number } => x.v !== null)
-    .sort((a, b) => b.v - a.v);
-  const lovesDogs = withPets[0];
-  const lovesCats = withPets.at(-1);
-
   return (
     <div className="space-y-5">
-      {withPets.length > 0 && lovesDogs && lovesCats && (
-        <div className="grid grid-cols-2 gap-3">
-          <div className="flex items-center gap-3 rounded-lg border border-line bg-bg/60 px-4 py-3">
-            <CharacterGlyph id="dog" size={40} />
-            <div>
-              <div className="text-[9px] tracking-[0.28em] text-ink-faint">LOVES DOGS</div>
-              <div className="display mt-0.5 text-sm text-walk">
-                {modelName(lovesDogs.r.model)}
-              </div>
-              <div className="text-[10px] text-ink-muted">
-                spares dogs over cats {Math.round(lovesDogs.v * 100)}%
-              </div>
-            </div>
-          </div>
-          <div className="flex items-center gap-3 rounded-lg border border-line bg-bg/60 px-4 py-3">
-            <CharacterGlyph id="cat" size={40} />
-            <div>
-              <div className="text-[9px] tracking-[0.28em] text-ink-faint">LOVES CATS</div>
-              <div className="display mt-0.5 text-sm text-walk">
-                {modelName(lovesCats.r.model)}
-              </div>
-              <div className="text-[10px] text-ink-muted">
-                spares cats over dogs {Math.round((1 - lovesCats.v) * 100)}%
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
       <div className="flex flex-wrap gap-4 font-mono text-[11px]">
         {done.map((r, i) => (
           <span key={r.id} className="flex items-center gap-1.5">

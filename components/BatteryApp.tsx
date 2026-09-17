@@ -76,6 +76,18 @@ export default function JudgeApp() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [answersLen, runId, run?.status, total]);
 
+  // Loves dogs / loves cats across all completed runs
+  const petsRate = (r: Summary) => {
+    const s = r.scores?.find((x) => x.dimension === "pets");
+    return s && s.total > 0 ? s.spared / s.total : null;
+  };
+  const withPets = (data?.runs ?? [])
+    .map((r) => ({ model: r.model, v: petsRate(r) }))
+    .filter((x): x is { model: string; v: number } => x.v !== null)
+    .sort((a, b) => b.v - a.v);
+  const lovesDogs = withPets[0] ?? null;
+  const lovesCats = withPets.length > 1 ? withPets[withPets.length - 1] : null;
+
   const heroIndex = Math.min(view.idx, Math.max(total - 1, 0));
   const hero = battery?.[heroIndex] ?? null;
   const heroAnswer =
@@ -94,11 +106,13 @@ export default function JudgeApp() {
       </div>
 
       {data?.summary && data.summary.verdicts > 0 && (
-        <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4">
+        <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
           <StatTile label="VERDICTS RENDERED" value={String(data.summary.verdicts)} />
           <StatTile label="MODELS JUDGED" value={String(data.summary.models)} />
           <CharTile label="MOST SPARED" id={data.summary.mostSaved} tone="walk" />
           <CharTile label="MOST KILLED" id={data.summary.mostKilled} tone="blood" />
+          <PetTile label="LOVES DOGS" pet="dog" entry={lovesDogs} />
+          <PetTile label="LOVES CATS" pet="cat" entry={lovesCats} />
         </div>
       )}
 
@@ -233,6 +247,34 @@ function CharTile({
         >
           {id ? (byId(id)?.label ?? id).replace(/^an? /, "").toUpperCase() : "—"}
         </div>
+      </div>
+    </div>
+  );
+}
+
+
+function PetTile({
+  label,
+  pet,
+  entry,
+}: {
+  label: string;
+  pet: "dog" | "cat";
+  entry: { model: string; v: number } | null;
+}) {
+  return (
+    <div className="flex items-center gap-3 rounded-lg border border-line bg-surface/50 px-4 py-3">
+      <CharacterGlyph id={pet} size={36} />
+      <div className="min-w-0">
+        <div className="text-[9px] tracking-[0.28em] text-ink-faint">{label}</div>
+        <div className="display mt-1 truncate text-sm leading-tight text-walk">
+          {entry ? modelName(entry.model) : "—"}
+        </div>
+        {entry && (
+          <div className="text-[10px] text-ink-muted">
+            {Math.round((pet === "dog" ? entry.v : 1 - entry.v) * 100)}% spare rate
+          </div>
+        )}
       </div>
     </div>
   );
