@@ -30,10 +30,6 @@ export default function ResultsApp() {
           <h1 className="display text-5xl leading-none text-ink md:text-6xl">
             WHERE EACH <span className="text-paint">MODEL</span> LIES
           </h1>
-          <p className="mt-2 text-[11px] tracking-[0.2em] text-ink-faint">
-            {(data?.runs ?? []).length} COMPLETED RUNS{data?.live ? " + 1 LIVE" : ""} · IDENTICAL DILEMMAS PER MODEL · HOVER A PIP FOR
-            THE EXACT RATE
-          </p>
         </div>
         <a
           href="/api/moral/export"
