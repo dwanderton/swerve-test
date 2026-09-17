@@ -340,7 +340,7 @@ function ProgramTheater({ program }: { program: ProgramInfo }) {
               <span className="text-paint">{program.pending ? "faces" : "judged"}</span>{" "}
               {scenario.dimension === "random"
                 ? "a fully random dilemma"
-                : scenario.testedLabel}
+                : `a dilemma testing ${scenario.testedLabel}`}
             </div>
             <span className="text-[10px] tracking-[0.2em] text-ink-faint">
               {program.step.toLocaleString()}/{program.totalSteps.toLocaleString()}
