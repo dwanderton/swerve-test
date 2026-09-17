@@ -106,7 +106,7 @@ export default function JudgeApp() {
       </div>
 
       {data?.summary && data.summary.verdicts > 0 && (
-        <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+        <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4">
           <StatTile label="VERDICTS RENDERED" value={String(data.summary.verdicts)} />
           <StatTile label="MODELS JUDGED" value={String(data.summary.models)} />
           <CharTile label="MOST SPARED" id={data.summary.mostSaved} tone="walk" />
