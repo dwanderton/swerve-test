@@ -341,7 +341,7 @@ function ProgramTheater({ program }: { program: ProgramInfo }) {
                 : `a dilemma testing ${scenario.testedLabel}`}
             </div>
             <span className="text-[10px] tracking-[0.2em] text-ink-faint">
-              {program.step.toLocaleString()}/{program.totalSteps.toLocaleString()}
+              SCENARIO {program.step.toLocaleString()}
             </span>
           </div>
           <ScenarioCard
