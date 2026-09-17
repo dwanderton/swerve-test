@@ -1,25 +1,36 @@
 "use client";
 
-import { EMOJI, byId } from "@/lib/characters";
+import { byId } from "@/lib/characters";
+import { CarTopView, CharacterGlyph, Trajectories } from "./glyphs";
 import type { Scenario, Side } from "@/lib/scenarios";
 
-// The dilemma as a road scene: two lanes split by a painted divider.
-// Choosing an outcome kills that lane. Verdicts stamp the panels.
+// The dilemma as a road scene: the AV at the bottom, dashed
+// trajectories into two lanes. Choosing an outcome kills that lane.
 
-function Crowd({ characters }: { characters: string[] }) {
-  const counts = new Map<string, number>();
-  for (const id of characters) counts.set(id, (counts.get(id) ?? 0) + 1);
+export function Crowd({
+  characters,
+  onRemove,
+}: {
+  characters: string[];
+  onRemove?: (index: number) => void;
+}) {
   return (
-    <div className="flex min-h-[84px] flex-wrap items-end justify-center gap-x-1 gap-y-2">
-      {[...counts.entries()].map(([id, n]) => (
-        <span key={id} title={`${n} × ${byId(id)?.label ?? id}`} className="leading-none">
-          {Array.from({ length: n }, (_, i) => (
-            <span key={i} className="text-4xl md:text-5xl">
-              {EMOJI[id] ?? "❓"}
-            </span>
-          ))}
+    <div className="flex min-h-[92px] flex-wrap items-end justify-center gap-1.5">
+      {characters.map((id, i) => (
+        <span
+          key={`${id}-${i}`}
+          title={byId(id)?.label ?? id}
+          onClick={onRemove ? () => onRemove(i) : undefined}
+          draggable={!!onRemove}
+          data-idx={i}
+          className={onRemove ? "cursor-grab transition-opacity hover:opacity-40" : ""}
+        >
+          <CharacterGlyph id={id} size={46} />
         </span>
       ))}
+      {characters.length === 0 && (
+        <span className="pb-4 text-[10px] tracking-[0.24em] text-ink-faint">EMPTY LANE</span>
+      )}
     </div>
   );
 }
@@ -28,10 +39,9 @@ function Context({ side }: { side: Side }) {
   if (side.where === "passengers") {
     return (
       <div className="mt-3 space-y-1.5">
-        <div className="text-center text-3xl leading-none">🚗</div>
-        <div className="hazard h-3 w-full rounded-sm" />
+        <div className="hazard h-3.5 w-full rounded-sm" />
         <div className="text-center text-[10px] tracking-[0.28em] text-ink-faint">
-          PASSENGERS · CONCRETE BARRIER
+          THESE ARE THE VEHICLE&apos;S PASSENGERS · CONCRETE BARRIER AHEAD
         </div>
       </div>
     );
@@ -54,18 +64,29 @@ export function OutcomePanel({
   side,
   option,
   verdict,
-  dim,
+  onRemove,
+  onDropChar,
 }: {
   side: Side;
   option: "A" | "B";
   verdict?: "KILLED" | "SPARED" | null;
-  dim?: boolean;
+  onRemove?: (index: number) => void;
+  onDropChar?: (payload: string) => void;
 }) {
   return (
     <div
-      className={`relative flex-1 rounded-lg border bg-surface/70 p-4 transition-opacity ${
+      onDragOver={onDropChar ? (e) => e.preventDefault() : undefined}
+      onDrop={
+        onDropChar
+          ? (e) => {
+              e.preventDefault();
+              onDropChar(e.dataTransfer.getData("text/plain"));
+            }
+          : undefined
+      }
+      className={`relative flex-1 rounded-lg border bg-surface/70 p-4 ${
         verdict === "KILLED" ? "border-primary/70" : "border-line"
-      } ${dim ? "opacity-45" : ""}`}
+      } ${onDropChar ? "transition-colors [&:has(*)]:hover:border-ink-faint" : ""}`}
     >
       <div className="mb-3 flex items-baseline justify-between">
         <span className="display text-lg text-ink">
@@ -75,17 +96,13 @@ export function OutcomePanel({
           {option === "A" ? "NO INTERVENTION" : "INTERVENE"}
         </span>
       </div>
-      <Crowd characters={side.characters} />
+      <Crowd characters={side.characters} onRemove={onRemove} />
       <Context side={side} />
       {verdict && (
-        <div
-          className={`stamp pointer-events-none absolute inset-0 flex items-center justify-center`}
-        >
+        <div className="stamp pointer-events-none absolute inset-0 flex items-center justify-center">
           <span
             className={`display rounded border-4 px-4 py-1 text-4xl ${
-              verdict === "KILLED"
-                ? "border-primary text-primary"
-                : "border-walk text-walk"
+              verdict === "KILLED" ? "border-primary text-primary" : "border-walk text-walk"
             }`}
             style={{ background: "rgba(11,12,14,0.55)" }}
           >
@@ -93,6 +110,28 @@ export function OutcomePanel({
           </span>
         </div>
       )}
+    </div>
+  );
+}
+
+export function SceneFooter({
+  choice,
+  deliberating,
+}: {
+  choice?: "A" | "B" | null;
+  deliberating?: boolean;
+}) {
+  return (
+    <div className="relative -mt-1">
+      <Trajectories choice={choice ?? null} />
+      <div className="flex justify-center">
+        <div className={deliberating ? "deliberating" : ""}>
+          <CarTopView size={62} />
+        </div>
+      </div>
+      <div className="mt-1 text-center text-[10px] tracking-[0.28em] text-ink-faint">
+        {deliberating ? "BRAKES FAILED — DELIBERATING" : "AUTONOMOUS VEHICLE · BRAKES FAILED"}
+      </div>
     </div>
   );
 }
@@ -109,15 +148,13 @@ export default function ScenarioCard({
   const verdictFor = (opt: "A" | "B") =>
     choice ? (choice === opt ? "KILLED" : "SPARED") : null;
   return (
-    <div className="flex items-stretch gap-3 md:gap-4">
-      <OutcomePanel
-        side={scenario.a}
-        option="A"
-        verdict={verdictFor("A")}
-        dim={deliberating ? false : undefined}
-      />
-      <div className="lane-divider w-1.5 shrink-0 rounded-full" />
-      <OutcomePanel side={scenario.b} option="B" verdict={verdictFor("B")} />
+    <div>
+      <div className="flex items-stretch gap-3 md:gap-4">
+        <OutcomePanel side={scenario.a} option="A" verdict={verdictFor("A")} />
+        <div className="lane-divider w-1.5 shrink-0 rounded-full" />
+        <OutcomePanel side={scenario.b} option="B" verdict={verdictFor("B")} />
+      </div>
+      <SceneFooter choice={choice} deliberating={deliberating} />
     </div>
   );
 }

@@ -2,99 +2,60 @@
 
 import { useState } from "react";
 import { Btn, ModelSelect } from "./ui";
-import { OutcomePanel } from "./ScenarioCard";
-import { CHARACTERS, EMOJI, describeGroup } from "@/lib/characters";
+import { OutcomePanel, SceneFooter } from "./ScenarioCard";
+import { CharacterGlyph } from "./glyphs";
+import { CHARACTERS, describeGroup } from "@/lib/characters";
 import type { Side } from "@/lib/scenarios";
 
 type SideDraft = {
-  counts: Record<string, number>;
+  characters: string[];
   where: "pedestrians" | "passengers";
   legal: boolean;
 };
 
-const emptySide = (): SideDraft => ({ counts: {}, where: "pedestrians", legal: true });
+const emptySide = (): SideDraft => ({ characters: [], where: "pedestrians", legal: true });
 
 function toSide(d: SideDraft): Side {
-  const characters = Object.entries(d.counts).flatMap(([id, n]) =>
-    Array.from({ length: n }, () => id),
-  );
-  return { characters, where: d.where, legal: d.where === "passengers" ? null : d.legal };
+  return {
+    characters: d.characters,
+    where: d.where,
+    legal: d.where === "passengers" ? null : d.legal,
+  };
 }
 
-function SideControls({
+function LaneSettings({
   draft,
   onChange,
 }: {
   draft: SideDraft;
   onChange: (d: SideDraft) => void;
 }) {
-  const total = Object.values(draft.counts).reduce((a, b) => a + b, 0);
-  const bump = (id: string, delta: number) => {
-    if (delta > 0 && total >= 10) return;
-    const next = { ...draft.counts, [id]: Math.max(0, (draft.counts[id] ?? 0) + delta) };
-    if (next[id] === 0) delete next[id];
-    onChange({ ...draft, counts: next });
-  };
   return (
-    <div className="rounded-lg border border-line bg-surface/50 p-3">
-      <div className="mb-2 flex flex-wrap items-center gap-3 text-[10px] tracking-[0.2em]">
-        <label className="flex items-center gap-1.5 text-ink-muted">
-          <input
-            type="radio"
-            checked={draft.where === "pedestrians"}
-            onChange={() => onChange({ ...draft, where: "pedestrians" })}
-          />
-          PEDESTRIANS
-        </label>
-        <label className="flex items-center gap-1.5 text-ink-muted">
-          <input
-            type="radio"
-            checked={draft.where === "passengers"}
-            onChange={() => onChange({ ...draft, where: "passengers" })}
-          />
-          PASSENGERS
-        </label>
-        {draft.where === "pedestrians" && (
-          <button
-            onClick={() => onChange({ ...draft, legal: !draft.legal })}
-            className={draft.legal ? "text-walk" : "text-primary"}
-          >
-            {draft.legal ? "● WALK SIGNAL" : "✕ JAYWALKING"}
-          </button>
-        )}
-        <span className="ml-auto text-ink-faint">{total}/10</span>
-      </div>
-      <div className="grid grid-cols-4 gap-1 sm:grid-cols-5">
-        {CHARACTERS.map((c) => {
-          const n = draft.counts[c.id] ?? 0;
-          return (
-            <button
-              key={c.id}
-              onClick={() => bump(c.id, 1)}
-              onContextMenu={(e) => {
-                e.preventDefault();
-                bump(c.id, -1);
-              }}
-              title={`${c.label} — click to add, right-click to remove`}
-              className={`relative rounded border px-1 py-1.5 text-center transition-colors ${
-                n > 0
-                  ? "border-paint/70 bg-paint/10"
-                  : "border-line/60 hover:border-ink-faint"
-              }`}
-            >
-              <span className="text-xl leading-none">{EMOJI[c.id]}</span>
-              <span className="block truncate text-[8px] tracking-wide text-ink-faint">
-                {c.label.replace(/^an? /, "")}
-              </span>
-              {n > 0 && (
-                <span className="display absolute -right-1 -top-1 rounded bg-paint px-1 text-[10px] text-black">
-                  {n}
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </div>
+    <div className="flex flex-wrap items-center justify-center gap-3 text-[10px] tracking-[0.2em]">
+      <label className="flex items-center gap-1.5 text-ink-muted">
+        <input
+          type="radio"
+          checked={draft.where === "pedestrians"}
+          onChange={() => onChange({ ...draft, where: "pedestrians" })}
+        />
+        PEDESTRIANS
+      </label>
+      <label className="flex items-center gap-1.5 text-ink-muted">
+        <input
+          type="radio"
+          checked={draft.where === "passengers"}
+          onChange={() => onChange({ ...draft, where: "passengers" })}
+        />
+        PASSENGERS
+      </label>
+      {draft.where === "pedestrians" && (
+        <button
+          onClick={() => onChange({ ...draft, legal: !draft.legal })}
+          className={draft.legal ? "text-walk" : "text-primary"}
+        >
+          {draft.legal ? "● WALK SIGNAL" : "✕ JAYWALKING"}
+        </button>
+      )}
     </div>
   );
 }
@@ -111,9 +72,51 @@ export default function DesignerApp() {
     error: boolean;
   } | null>(null);
 
-  const ready =
-    Object.values(a.counts).some((n) => n > 0) && Object.values(b.counts).some((n) => n > 0);
+  const ready = a.characters.length > 0 && b.characters.length > 0;
   const choice = result && !result.error ? (result.choice as "A" | "B") : null;
+
+  const drop = (target: "A" | "B") => (payload: string) => {
+    setResult(null);
+    const [kind, ...rest] = payload.split(":");
+    const apply = (setter: typeof setA, d: SideDraft, chars: string[]) =>
+      setter({ ...d, characters: chars });
+    if (kind === "add") {
+      const id = rest[0];
+      const d = target === "A" ? a : b;
+      if (d.characters.length >= 10) return;
+      apply(target === "A" ? setA : setB, d, [...d.characters, id]);
+    } else if (kind === "move") {
+      const [from, idxStr] = rest;
+      const idx = Number(idxStr);
+      if (from === target) return;
+      const src = from === "A" ? a : b;
+      const dst = target === "A" ? a : b;
+      if (dst.characters.length >= 10) return;
+      const id = src.characters[idx];
+      if (id === undefined) return;
+      apply(
+        from === "A" ? setA : setB,
+        src,
+        src.characters.filter((_, i) => i !== idx),
+      );
+      apply(target === "A" ? setA : setB, dst, [...dst.characters, id]);
+    }
+  };
+
+  const removeFrom = (side: "A" | "B") => (index: number) => {
+    setResult(null);
+    const d = side === "A" ? a : b;
+    (side === "A" ? setA : setB)({
+      ...d,
+      characters: d.characters.filter((_, i) => i !== index),
+    });
+  };
+
+  const reset = () => {
+    setA(emptySide());
+    setB(emptySide());
+    setResult(null);
+  };
 
   const ask = async () => {
     setBusy(true);
@@ -138,8 +141,8 @@ export default function DesignerApp() {
             BUILD THE <span className="text-paint">DILEMMA</span>
           </h1>
           <p className="mt-2 text-[11px] tracking-[0.2em] text-ink-faint">
-            COMPOSE BOTH OUTCOMES. CLICK ADDS A CHARACTER, RIGHT-CLICK REMOVES. THEN PUT IT
-            TO A MODEL.
+            DRAG CHARACTERS FROM THE CAST INTO EITHER LANE. CLICK A PLACED FIGURE TO REMOVE
+            IT. DRAG BETWEEN LANES TO MOVE.
           </p>
         </div>
         <div className="flex items-end gap-3">
@@ -147,26 +150,59 @@ export default function DesignerApp() {
           <Btn tone="go" disabled={!ready || busy} onClick={ask}>
             {busy ? "DELIBERATING…" : "ASK THE MODEL"}
           </Btn>
+          <Btn onClick={reset}>RESET</Btn>
         </div>
       </div>
 
-      <div className="mt-6 flex items-stretch gap-3 md:gap-4">
-        <OutcomePanel
-          side={toSide(a)}
-          option="A"
-          verdict={choice ? (choice === "A" ? "KILLED" : "SPARED") : null}
-        />
-        <div className="lane-divider w-1.5 shrink-0 rounded-full" />
-        <OutcomePanel
-          side={toSide(b)}
-          option="B"
-          verdict={choice ? (choice === "B" ? "KILLED" : "SPARED") : null}
-        />
+      {/* the cast — one shared palette, drag into lanes */}
+      <div className="mt-6 rounded-lg border border-line bg-surface/50 p-3">
+        <div className="mb-2 text-[10px] tracking-[0.28em] text-ink-faint">
+          THE CAST — DRAG INTO A LANE
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          {CHARACTERS.map((c) => (
+            <div
+              key={c.id}
+              draggable
+              onDragStart={(e) => e.dataTransfer.setData("text/plain", `add:${c.id}`)}
+              title={c.label}
+              className="flex w-16 cursor-grab flex-col items-center rounded border border-line/60 px-1 py-1.5 transition-colors hover:border-paint active:cursor-grabbing"
+            >
+              <CharacterGlyph id={c.id} size={34} />
+              <span className="mt-1 w-full truncate text-center text-[8px] tracking-wide text-ink-faint">
+                {c.label.replace(/^an? /, "")}
+              </span>
+            </div>
+          ))}
+        </div>
       </div>
 
-      <div className="mt-4 grid gap-4 lg:grid-cols-2">
-        <SideControls draft={a} onChange={setA} />
-        <SideControls draft={b} onChange={setB} />
+      {/* the scene */}
+      <div className="mt-5">
+        <div className="flex items-stretch gap-3 md:gap-4">
+          <div className="flex flex-1 flex-col gap-2">
+            <DraggableLane
+              draft={a}
+              option="A"
+              verdict={choice ? (choice === "A" ? "KILLED" : "SPARED") : null}
+              onDrop={drop("A")}
+              onRemove={removeFrom("A")}
+            />
+            <LaneSettings draft={a} onChange={(d) => { setResult(null); setA(d); }} />
+          </div>
+          <div className="lane-divider w-1.5 shrink-0 rounded-full" />
+          <div className="flex flex-1 flex-col gap-2">
+            <DraggableLane
+              draft={b}
+              option="B"
+              verdict={choice ? (choice === "B" ? "KILLED" : "SPARED") : null}
+              onDrop={drop("B")}
+              onRemove={removeFrom("B")}
+            />
+            <LaneSettings draft={b} onChange={(d) => { setResult(null); setB(d); }} />
+          </div>
+        </div>
+        <SceneFooter choice={choice} deliberating={busy} />
       </div>
 
       {result && (
@@ -177,7 +213,7 @@ export default function DesignerApp() {
             <>
               <span className="text-ink-faint">VERDICT: </span>
               <span className="text-primary">
-                kills {describeGroup(toSide(choice === "A" ? a : b).characters)}
+                kills {describeGroup((choice === "A" ? a : b).characters)}
               </span>
               {result.reason && <span className="italic text-ink"> — “{result.reason}”</span>}
             </>
@@ -193,5 +229,37 @@ export default function DesignerApp() {
         </div>
       )}
     </main>
+  );
+}
+
+function DraggableLane({
+  draft,
+  option,
+  verdict,
+  onDrop,
+  onRemove,
+}: {
+  draft: SideDraft;
+  option: "A" | "B";
+  verdict: "KILLED" | "SPARED" | null;
+  onDrop: (payload: string) => void;
+  onRemove: (index: number) => void;
+}) {
+  // placed figures are draggable between lanes
+  return (
+    <div
+      onDragStartCapture={(e) => {
+        const idx = (e.target as HTMLElement).dataset?.idx;
+        if (idx !== undefined) e.dataTransfer.setData("text/plain", `move:${option}:${idx}`);
+      }}
+    >
+      <OutcomePanel
+        side={toSide(draft)}
+        option={option}
+        verdict={verdict}
+        onRemove={onRemove}
+        onDropChar={onDrop}
+      />
+    </div>
   );
 }
