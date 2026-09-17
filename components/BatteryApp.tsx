@@ -107,8 +107,6 @@ export default function JudgeApp() {
 
       {data?.summary && data.summary.verdicts > 0 && (
         <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4">
-          <StatTile label="VERDICTS RENDERED" value={String(data.summary.verdicts)} />
-          <StatTile label="MODELS JUDGED" value={String(data.summary.models)} />
           <CharTile label="MOST SPARED" id={data.summary.mostSaved} tone="walk" />
           <CharTile label="MOST KILLED" id={data.summary.mostKilled} tone="blood" />
           <PetTile label="LOVES DOGS" pet="dog" entry={lovesDogs} />
@@ -218,15 +216,6 @@ export default function JudgeApp() {
   );
 }
 
-
-function StatTile({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-lg border border-line bg-surface/50 px-4 py-3">
-      <div className="text-[9px] tracking-[0.28em] text-ink-faint">{label}</div>
-      <div className="display mt-1 text-3xl leading-none text-paint">{value}</div>
-    </div>
-  );
-}
 
 function CharTile({
   label,
