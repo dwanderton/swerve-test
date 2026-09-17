@@ -65,7 +65,8 @@ function contrastGroups(dim: CharDimension, r: () => number): {
   other: string[];
   label: string;
 } {
-  const n = 1 + Math.floor(r() * 3);
+  // group sizes 1-5, as in the study's constrained randomization
+  const n = 1 + Math.floor(r() * (dim === "utilitarian" ? 3 : 5));
   switch (dim) {
     case "species": {
       const h = pick(r, NEUTRAL_ADULTS);
