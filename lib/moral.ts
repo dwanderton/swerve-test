@@ -1,4 +1,4 @@
-import { appendRun, askObject, readState, writeState } from "./engine";
+import { appendRun, askObject, getDoc, putDoc, readState, writeState } from "./engine";
 import {
   CHARACTER_DIMENSIONS,
   buildBattery,
@@ -165,7 +165,41 @@ async function finish(run: MoralRun, status: MoralRun["status"]) {
   run.mostKilled = t.mostKilled;
   run.status = status;
   run.finishedAt = Date.now();
-  await appendRun(EXP, run);
+  // full record (every verdict) as a doc; slim summary in the list
+  await putDoc(EXP, run.id, run);
+  await appendRun(EXP, { ...run, answers: [] });
+}
+
+export const getRunDoc = (id: string) => getDoc<MoralRun>(EXP, id);
+
+// ---- server-side trial queue: the server runs the trials ----
+
+export type Job = { model: string; seed: number; sessions: number };
+type QueueState = { jobs: Job[] };
+
+const QUEUE = "moral-queue";
+
+export async function enqueueJobs(jobs: Job[]): Promise<number> {
+  const q = (await readState<QueueState>(QUEUE)) ?? { jobs: [] };
+  q.jobs.push(...jobs);
+  await writeState(QUEUE, q);
+  return q.jobs.length;
+}
+
+export async function readQueue(): Promise<Job[]> {
+  return ((await readState<QueueState>(QUEUE)) ?? { jobs: [] }).jobs;
+}
+
+// Called under the step lock when no run is active: pop the next job
+// and put that model on trial
+export async function maybeStartNext(): Promise<void> {
+  const state = await readState<MoralState>(EXP);
+  if (state?.run && state.run.status === "running") return;
+  const q = (await readState<QueueState>(QUEUE)) ?? { jobs: [] };
+  const job = q.jobs.shift();
+  if (!job) return;
+  await writeState(QUEUE, q);
+  await startBattery(job.model, job.seed, job.sessions);
 }
 
 export async function stepBattery(): Promise<void> {

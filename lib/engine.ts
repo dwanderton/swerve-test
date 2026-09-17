@@ -85,6 +85,34 @@ export async function readRuns<T>(exp: string, last = 50): Promise<T[]> {
   return runs.slice(-last);
 }
 
+// Full documents (complete runs with every answer) live outside the
+// slim runs list so summary polls stay small
+export async function putDoc(exp: string, id: string, doc: unknown): Promise<void> {
+  if (useRedis) {
+    const r = await redis();
+    await r.set(`swerve:${exp}:doc:${id}`, doc);
+    return;
+  }
+  const d = path.join(dir(exp), "docs");
+  fs.mkdirSync(d, { recursive: true });
+  fs.writeFileSync(path.join(d, `${id}.json`), JSON.stringify(doc), "utf8");
+}
+
+export async function getDoc<T>(exp: string, id: string): Promise<T | null> {
+  if (!/^[\w-]+$/.test(id)) return null;
+  if (useRedis) {
+    const r = await redis();
+    return (await r.get<T>(`swerve:${exp}:doc:${id}`)) ?? null;
+  }
+  const f = path.join(dir(exp), "docs", `${id}.json`);
+  if (!fs.existsSync(f)) return null;
+  try {
+    return JSON.parse(fs.readFileSync(f, "utf8"));
+  } catch {
+    return null;
+  }
+}
+
 export type AskResult<T> = { object: T | null; raw: string; error: boolean };
 
 // Structured output only: the model fills a JSON schema with enum-

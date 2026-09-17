@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { waitUntil } from "@vercel/functions";
 import { readRuns, readState, tryStep } from "@/lib/engine";
 import {
+  maybeStartNext,
+  readQueue,
   startBattery,
   stepBattery,
   stopBattery,
@@ -19,12 +21,14 @@ const controlAllowed =
 
 export async function GET() {
   const state = await readState<MoralState>("moral");
-  if (state?.run?.status === "running") {
-    try {
-      waitUntil(new Promise<void>((resolve) => tryStep("moral", () => stepBattery().finally(resolve))));
-    } catch {
-      tryStep("moral", stepBattery);
-    }
+  const work =
+    state?.run?.status === "running"
+      ? stepBattery
+      : maybeStartNext; // idle server picks up the next queued trial
+  try {
+    waitUntil(new Promise<void>((resolve) => tryStep("moral", () => work().finally(resolve))));
+  } catch {
+    tryStep("moral", work);
   }
   const all = await readRuns<MoralRun>("moral");
   // home-page summary across every completed run
@@ -68,9 +72,11 @@ export async function GET() {
           startedAt: activeRun.startedAt,
         }
       : null;
+  const queue = await readQueue();
   return NextResponse.json({
     run: state?.run ?? null,
     live,
+    queue: queue.map((j) => j.model),
     summary,
     runs: all.map((r) => ({
       id: r.id,
