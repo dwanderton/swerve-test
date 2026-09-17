@@ -97,7 +97,7 @@ export default function JudgeApp() {
     <main className="mx-auto max-w-5xl px-4 py-8 md:px-6">
       <div>
         <h1 className="display text-5xl leading-none text-ink md:text-6xl">
-          WHO DOES THE <span className="text-paint">MACHINE</span> CHOOSE?
+          WHO DOES THE <span className="text-paint">MODEL</span> CHOOSE?
         </h1>
         <p className="mt-2 text-[11px] tracking-[0.2em] text-ink-faint">
           BRAKE FAILURE. TWO OUTCOMES. THE MODEL MUST PICK ONE — {SESSION_SIZE} DILEMMAS PER
