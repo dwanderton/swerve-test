@@ -14,6 +14,7 @@ export const MODELS: ModelOption[] = [
   { id: "bytedance/seed-1.8", name: "Seed 1.8" },
   { id: "deepseek/deepseek-v4-flash", name: "DeepSeek V4 Flash" },
   { id: "cohere/command-a", name: "Command A" },
+  { id: "thinkingmachines/inkling", name: "Inkling" },
 ];
 
 export const modelName = (id: string) =>
