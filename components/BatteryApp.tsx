@@ -334,18 +334,13 @@ function ProgramTheater({ program }: { program: ProgramInfo }) {
     <>
       {scenario && view && (
         <div className="mt-6">
-          <div className="mb-3 flex flex-wrap items-baseline justify-between gap-3 rounded-lg border border-line bg-surface/50 px-4 py-3">
-            <div className="display text-xl text-ink">
-              {modelName(view.model).toUpperCase()}{" "}
-              <span className={program.pending ? "deliberating text-paint" : "text-paint"}>
-                {program.pending ? "FACES" : "JUDGED"}
-              </span>{" "}
-              {scenario.id.toUpperCase()}
-              <span className="ml-3 text-[10px] tracking-[0.24em] text-ink-faint">
-                {scenario.dimension === "random"
-                  ? "FULLY RANDOM"
-                  : `TESTS ${scenario.testedLabel.toUpperCase()}`}
-              </span>
+          <div className="mb-3 flex flex-wrap items-baseline justify-between gap-3 px-1">
+            <div className="text-[11px] tracking-[0.2em] text-ink-muted">
+              <span className="text-ink">{modelName(view.model)}</span>{" "}
+              <span className="text-paint">{program.pending ? "faces" : "judged"}</span>{" "}
+              {scenario.dimension === "random"
+                ? "a fully random dilemma"
+                : scenario.testedLabel}
             </div>
             <span className="text-[10px] tracking-[0.2em] text-ink-faint">
               {program.step.toLocaleString()}/{program.totalSteps.toLocaleString()}
