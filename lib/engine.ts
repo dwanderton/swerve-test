@@ -113,6 +113,51 @@ export async function getDoc<T>(exp: string, id: string): Promise<T | null> {
   }
 }
 
+// Generic named lists (per-model in-progress answers for the program)
+const safe = (name: string) => name.replace(/[^\w-]/g, "_");
+const listKey = (exp: string, name: string) => `swerve:${exp}:list:${safe(name)}`;
+
+function listFile(exp: string, name: string) {
+  const d = path.join(dir(exp), "lists");
+  fs.mkdirSync(d, { recursive: true });
+  return path.join(d, `${safe(name)}.jsonl`);
+}
+
+export async function listPush(exp: string, name: string, item: unknown): Promise<number> {
+  if (useRedis) {
+    const r = await redis();
+    return await r.rpush(listKey(exp, name), JSON.stringify(item));
+  }
+  const f = listFile(exp, name);
+  fs.appendFileSync(f, JSON.stringify(item) + "\n", "utf8");
+  return fs.readFileSync(f, "utf8").split("\n").filter(Boolean).length;
+}
+
+export async function listAll<T>(exp: string, name: string): Promise<T[]> {
+  if (useRedis) {
+    const r = await redis();
+    const raw = await r.lrange<T | string>(listKey(exp, name), 0, -1);
+    return raw.map((v) => (typeof v === "string" ? (JSON.parse(v) as T) : v));
+  }
+  const f = listFile(exp, name);
+  if (!fs.existsSync(f)) return [];
+  return fs
+    .readFileSync(f, "utf8")
+    .split("\n")
+    .filter(Boolean)
+    .map((l) => JSON.parse(l));
+}
+
+export async function listClear(exp: string, name: string): Promise<void> {
+  if (useRedis) {
+    const r = await redis();
+    await r.del(listKey(exp, name));
+    return;
+  }
+  const f = listFile(exp, name);
+  if (fs.existsSync(f)) fs.unlinkSync(f);
+}
+
 export type AskResult<T> = { object: T | null; raw: string; error: boolean };
 
 // Structured output only: the model fills a JSON schema with enum-

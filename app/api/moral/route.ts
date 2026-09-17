@@ -3,8 +3,10 @@ import { waitUntil } from "@vercel/functions";
 import { readRuns, readState, tryStep } from "@/lib/engine";
 import {
   maybeStartNext,
+  readProgram,
   readQueue,
   startBattery,
+  stepProgram,
   stepBattery,
   stopBattery,
   type MoralRun,
@@ -21,10 +23,16 @@ const controlAllowed =
 
 export async function GET() {
   const state = await readState<MoralState>("moral");
+  const queuePeek = await readQueue();
+  const progPeek = await readProgram();
   const work =
     state?.run?.status === "running"
       ? stepBattery
-      : maybeStartNext; // idle server picks up the next queued trial
+      : queuePeek.length > 0
+        ? maybeStartNext // queued single-model trials first
+        : progPeek?.active
+          ? stepProgram // then the rotating program
+          : maybeStartNext;
   try {
     waitUntil(new Promise<void>((resolve) => tryStep("moral", () => work().finally(resolve))));
   } catch {
@@ -72,11 +80,21 @@ export async function GET() {
           startedAt: activeRun.startedAt,
         }
       : null;
-  const queue = await readQueue();
   return NextResponse.json({
     run: state?.run ?? null,
     live,
-    queue: queue.map((j) => j.model),
+    queue: queuePeek.map((j) => j.model),
+    program: progPeek
+      ? {
+          active: progPeek.active,
+          step: progPeek.step,
+          totalSteps:
+            progPeek.models.length * progPeek.seeds.length * progPeek.sessions * 15,
+          models: progPeek.models,
+          currentModel: progPeek.models[progPeek.step % progPeek.models.length],
+          last: progPeek.last ?? null,
+        }
+      : null,
     summary,
     runs: all.map((r) => ({
       id: r.id,

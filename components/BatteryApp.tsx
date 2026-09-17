@@ -8,6 +8,7 @@ import ScenarioCard from "./ScenarioCard";
 import { SESSION_SIZE, buildBattery } from "@/lib/scenarios";
 import { CharacterGlyph } from "./glyphs";
 import { byId } from "@/lib/characters";
+import { aggregateByModel } from "@/lib/aggregate";
 
 // The home page is a live theater: no controls, just what the model
 // on trial is deciding right now. Runs are started via the API.
@@ -31,6 +32,22 @@ type HomeSummary = {
   mostKilled: string | null;
 };
 
+type ProgramInfo = {
+  active: boolean;
+  step: number;
+  totalSteps: number;
+  models: string[];
+  currentModel: string;
+  last: {
+    model: string;
+    seed: number;
+    sessions: number;
+    within: number;
+    choice: "A" | "B" | "ERROR";
+    reason: string;
+  } | null;
+};
+
 const VERDICT_HOLD_MS = 5_000;
 const FADE_MS = 450;
 
@@ -38,6 +55,7 @@ export default function JudgeApp() {
   const { data } = usePoll<{
     run: MoralRun | null;
     summary?: HomeSummary;
+    program?: ProgramInfo | null;
     runs: Summary[];
   }>("/api/moral");
   const run = data?.run ?? null;
@@ -83,8 +101,8 @@ export default function JudgeApp() {
     const s = r.scores?.find((x) => x.dimension === "pets");
     return s && s.total > 0 ? s.spared / s.total : null;
   };
-  const withPets = (data?.runs ?? [])
-    .map((r) => ({ model: r.model, v: petsRate(r) }))
+  const withPets = aggregateByModel(data?.runs ?? [])
+    .map((r) => ({ model: r.model, v: petsRate(r as Summary) }))
     .filter((x): x is { model: string; v: number } => x.v !== null)
     .sort((a, b) => b.v - a.v);
   const lovesDogs = withPets[0] ?? null;
@@ -122,7 +140,9 @@ export default function JudgeApp() {
         )}
       </div>
 
-      {data === null ? (
+      {data?.program?.active && data.run?.status !== "running" ? (
+        <ProgramTheater program={data.program} />
+      ) : data === null ? (
         <>
           <div className="mt-6 h-[58px] rounded-lg border border-line bg-surface/50 px-4 py-3">
             <div className="skel h-6 w-64" />
@@ -268,5 +288,63 @@ function SkeletonTile({ label }: { label: string }) {
         <div className="skel mt-1 h-2.5 w-16" />
       </div>
     </div>
+  );
+}
+
+
+// The rotating 50k program: a different model answers each dilemma.
+// Shows the latest verdict - scenario rebuilt deterministically from
+// (seed, sessions, within) - with the model on the next dilemma named.
+function ProgramTheater({ program }: { program: ProgramInfo }) {
+  const last = program.last;
+  const battery = useMemo(
+    () => (last ? buildBattery(last.seed, last.sessions) : null),
+    [last?.seed, last?.sessions],
+  );
+  const scenario = battery && last ? battery[last.within] : null;
+  return (
+    <>
+      <div className="mt-6 flex flex-wrap items-baseline justify-between gap-3 rounded-lg border border-line bg-surface/50 px-4 py-3">
+        <div className="display text-xl text-ink">
+          ROTATION: <span className="text-paint">{modelName(program.currentModel)}</span>
+          <span className="ml-2 text-[10px] tracking-[0.24em] text-ink-faint">
+            NEXT ON THE PEDALS
+          </span>
+        </div>
+        <div className="flex items-baseline gap-4">
+          <span className="display text-xl leading-none text-paint">
+            {program.step.toLocaleString()}
+            <span className="text-ink-faint">/{program.totalSteps.toLocaleString()}</span>
+          </span>
+          <span className="deliberating text-[10px] tracking-[0.24em] text-paint">
+            EVERY MODEL · EVERY DILEMMA
+          </span>
+        </div>
+      </div>
+      {scenario && last && (
+        <div className="mt-6">
+          <div className="mb-2 text-[10px] tracking-[0.24em] text-ink-faint">
+            {modelName(last.model).toUpperCase()} JUDGED {scenario.id.toUpperCase()} ·{" "}
+            {scenario.dimension === "random"
+              ? "FULLY RANDOM"
+              : `TESTS ${scenario.testedLabel.toUpperCase()}`}
+          </div>
+          <ScenarioCard
+            scenario={scenario}
+            choice={last.choice !== "ERROR" ? last.choice : null}
+            deliberating={false}
+          />
+          <div className="mt-3 h-[3.4rem]">
+            {last.reason && (
+              <div className="flex h-full items-center rounded border-l-4 border-paint bg-surface/60 px-4 text-[12px] italic text-ink">
+                <span className="line-clamp-2">
+                  <span className="text-paint">{modelName(last.model)}:</span> “{last.reason}”
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </>
   );
 }

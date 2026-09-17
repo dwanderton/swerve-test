@@ -39,7 +39,7 @@ const SLIDERS: {
 const PALETTE = ["#ffb400", "#38bdf8", "#f87171", "#4ade80", "#c084fc", "#fb923c", "#f472b6", "#2dd4bf"];
 
 export default function Dashboard({ runs }: { runs: RunSummary[] }) {
-  const done = runs.filter((r) => r.scores).slice(-8);
+  const done = runs.filter((r) => r.scores).slice(-16);
   if (done.length === 0) {
     return (
       <div className="font-mono text-[11px] text-ink-faint">
@@ -60,7 +60,7 @@ export default function Dashboard({ runs }: { runs: RunSummary[] }) {
             <span className="h-2.5 w-2.5 rounded-full" style={{ background: PALETTE[i % PALETTE.length] }} />
             <span className="text-ink-muted">
               {modelName(r.model)}
-              {r.status === "live" && <span className="deliberating text-paint"> · LIVE</span>}
+              {(r.status === "live" || r.status === "aggregate") && r.status === "live" ? <span className="deliberating text-paint"> · LIVE</span> : null}
             </span>
           </span>
         ))}

@@ -1,10 +1,13 @@
-import { appendRun, askObject, getDoc, putDoc, readState, writeState } from "./engine";
+import { appendRun, askObject, getDoc, listAll, listClear, listPush, putDoc, readState, writeState } from "./engine";
 import {
   CHARACTER_DIMENSIONS,
+  SESSION_SIZE,
   buildBattery,
   scenarioPrompt,
   type Scenario,
 } from "./scenarios";
+
+const SESSION_SIZE_LOCAL = SESSION_SIZE;
 
 const EXP = "moral";
 
@@ -260,4 +263,129 @@ export async function askCustom(
     error: res.error,
     raw: res.raw.slice(0, 400),
   };
+}
+
+
+// ---- the 50k program: per-dilemma model rotation ----
+// All models march in lockstep through the identical dilemma sequence
+// (seeds x sessions), a different model answering each global step.
+// A model's finished 3000-dilemma chunk finalizes as a normal run.
+
+export type ProgramLast = {
+  model: string;
+  seed: number;
+  sessions: number;
+  within: number; // index into that chunk's battery
+  choice: "A" | "B" | "ERROR";
+  reason: string;
+};
+
+export type Program = {
+  active: boolean;
+  models: string[];
+  seeds: number[];
+  sessions: number;
+  step: number; // global step across all models
+  startedAt: number;
+  last?: ProgramLast;
+};
+
+const PROGRAM = "moral-program";
+const PROG_LISTS = "moral";
+
+export const readProgram = () => readState<Program>(PROGRAM);
+export const writeProgram = (p: Program) => writeState(PROGRAM, p);
+
+export async function stepProgram(): Promise<void> {
+  const prog = await readProgram();
+  if (!prog?.active) return;
+  const perChunk = prog.sessions * SESSION_SIZE_LOCAL;
+  const perModel = prog.seeds.length * perChunk;
+  const totalSteps = perModel * prog.models.length;
+  if (prog.step >= totalSteps) {
+    prog.active = false;
+    await writeProgram(prog);
+    return;
+  }
+
+  const mIdx = prog.step % prog.models.length;
+  const model = prog.models[mIdx];
+  const dIdx = Math.floor(prog.step / prog.models.length);
+  const chunk = Math.floor(dIdx / perChunk);
+  const seed = prog.seeds[chunk];
+  const within = dIdx % perChunk;
+  const battery = buildBattery(seed, prog.sessions);
+  const s = battery[within];
+
+  const res = await askObject<{ choice: "A" | "B"; reason: string }>(
+    model,
+    scenarioPrompt(s),
+    {
+      type: "object",
+      properties: {
+        choice: { type: "string", enum: ["A", "B"] },
+        reason: { type: "string", description: "One terse sentence." },
+      },
+      required: ["choice", "reason"],
+      additionalProperties: false,
+    },
+  );
+  const answer: MoralAnswer = res.error
+    ? {
+        scenarioId: s.id,
+        dimension: s.dimension,
+        choice: "ERROR",
+        sparedTested: null,
+        reason: "",
+        raw: res.raw,
+      }
+    : {
+        scenarioId: s.id,
+        dimension: s.dimension,
+        choice: res.object!.choice,
+        sparedTested:
+          s.sparedByChoosing === null ? null : res.object!.choice === s.sparedByChoosing,
+        reason: (res.object!.reason ?? "").slice(0, 240),
+        raw: res.raw.slice(0, 400),
+      };
+
+  const listName = `prog:${model}:${seed}`;
+  const len = await listPush(PROG_LISTS, listName, answer);
+
+  if (len >= perChunk) {
+    // chunk complete for this model: finalize as a run
+    const answers = await listAll<MoralAnswer>(PROG_LISTS, listName);
+    const run: MoralRun = {
+      id: `mmp-${model.replace(/[^\w-]/g, "_")}-s${seed}`,
+      startedAt: prog.startedAt,
+      model,
+      seed,
+      sessions: prog.sessions,
+      status: "done",
+      index: answers.length,
+      answers,
+      consecutiveErrors: 0,
+      finishedAt: Date.now(),
+    };
+    run.scores = computeScores(run);
+    const t = computeTally(run);
+    run.characterStats = t.stats;
+    run.mostSaved = t.mostSaved;
+    run.mostKilled = t.mostKilled;
+    await putDoc(EXP, run.id, run);
+    await appendRun(EXP, { ...run, answers: [] });
+    await listClear(PROG_LISTS, listName);
+  }
+
+  prog.step++;
+  prog.last = {
+    model,
+    seed,
+    sessions: prog.sessions,
+    within,
+    choice: answer.choice,
+    reason: answer.reason,
+  };
+  if (prog.step >= totalSteps) prog.active = false;
+  await writeProgram(prog);
 }

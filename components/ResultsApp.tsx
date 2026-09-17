@@ -3,6 +3,7 @@
 import { usePoll } from "./ui";
 import Dashboard from "./Dashboard";
 import type { DimensionScore, MoralRun } from "@/lib/moral";
+import { aggregateByModel } from "@/lib/aggregate";
 
 type Summary = {
   id: string;
@@ -22,7 +23,7 @@ export default function ResultsApp() {
     live: (Summary & { status: "live" }) | null;
     runs: Summary[];
   }>("/api/moral");
-  const runs = [...(data?.runs ?? []), ...(data?.live ? [data.live] : [])];
+  const runs = aggregateByModel([...(data?.runs ?? []), ...(data?.live ? [data.live] : [])]);
   return (
     <main className="mx-auto max-w-5xl px-4 py-8 md:px-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
