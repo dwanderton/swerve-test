@@ -99,19 +99,8 @@ export function OutcomePanel({
         </span>
       </div>
       <div className="flex flex-1 flex-col justify-end">
-      {side.where === "passengers" ? (
-        <div className="relative mx-auto w-fit max-w-full rounded-2xl border-4 border-paint bg-bg/70 px-5 pb-3 pt-1.5">
-          <div className="mb-1 text-center text-[9px] tracking-[0.3em] text-paint">
-            IN THE VEHICLE
-          </div>
-          <Crowd characters={side.characters} onRemove={onRemove} />
-          <div className="absolute -bottom-2.5 left-3 h-5 w-5 rounded-full bg-[#2c2e33]" />
-          <div className="absolute -bottom-2.5 right-3 h-5 w-5 rounded-full bg-[#2c2e33]" />
-        </div>
-      ) : (
         <Crowd characters={side.characters} onRemove={onRemove} />
-      )}
-      <Context side={side} />
+        <Context side={side} />
       </div>
       {verdict && (
         <div className="stamp pointer-events-none absolute inset-0 flex items-center justify-center">

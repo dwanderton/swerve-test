@@ -179,10 +179,10 @@ export default function JudgeApp() {
                   }
                   deliberating={judging && !view.verdict}
                 />
-                <div className="mt-3 min-h-[2.4rem]">
+                <div className="mt-3 h-[3.4rem]">
                   {heroAnswer?.reason && (
-                    <div className="rounded border-l-4 border-paint bg-surface/60 px-4 py-2 text-[12px] italic text-ink">
-                      “{heroAnswer.reason}”
+                    <div className="flex h-full items-center rounded border-l-4 border-paint bg-surface/60 px-4 text-[12px] italic text-ink">
+                      <span className="line-clamp-2">“{heroAnswer.reason}”</span>
                     </div>
                   )}
                 </div>
