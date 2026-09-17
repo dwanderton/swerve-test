@@ -1,170 +1,242 @@
 "use client";
 
-// Hand-drawn pictograms in road-signage style: chalk figures, paint
-// accents. One component per cast member, composed from a small set of
-// primitives so silhouettes stay consistent.
+import { useEffect, useRef, useState } from "react";
+
+// The cast, drawn from scratch. Skeleton construction: filled head +
+// round-capped strokes for limbs (the way signage pictograms are
+// actually built), so figures read solid and smooth at any size.
+// Humans and animals share a 32x48 grid. Paint-yellow accents mark
+// roles; everything else inherits the chalk color.
 
 const PAINT = "#ffb400";
 
-type PersonOpts = {
-  skirt?: boolean;
-  wide?: boolean;
-  small?: boolean;
-  belly?: boolean;
-  cane?: boolean;
-  cross?: boolean;
-  briefcase?: boolean;
-  running?: boolean;
-  band?: boolean;
-};
+const S = ({ d, w = 4.2, paint = false }: { d: string; w?: number; paint?: boolean }) => (
+  <path
+    d={d}
+    fill="none"
+    stroke={paint ? PAINT : "currentColor"}
+    strokeWidth={w}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  />
+);
 
-function Person({
-  skirt,
-  wide,
-  small,
-  belly,
-  cane,
-  cross,
-  briefcase,
-  running,
-  band,
-}: PersonOpts) {
-  const scale = small ? 0.72 : 1;
-  const tx = small ? 12 * (1 - scale) : 0;
-  const ty = small ? 40 * (1 - scale) : 0;
+const Head = ({ cx = 16, cy = 7, r = 4.6 }: { cx?: number; cy?: number; r?: number }) => (
+  <circle cx={cx} cy={cy} r={r} fill="currentColor" />
+);
+
+// ---- poses ----
+
+function Standing({ wide = false }: { wide?: boolean }) {
+  const w = wide ? 6.4 : 4.4;
   return (
-    <g transform={`translate(${tx} ${ty}) scale(${scale})`}>
-      <circle cx={cane ? 13.5 : 12} cy={cane ? 6.5 : 5} r="4" />
-      {running ? (
+    <>
+      <Head />
+      <S d="M16 13 V27" w={wide ? 8.5 : 6} />
+      <S d="M16 15.5 L10 22.5" w={w * 0.72} />
+      <S d="M16 15.5 L22 22.5" w={w * 0.72} />
+      <S d="M16 26 L12 41" w={w} />
+      <S d="M16 26 L20 41" w={w} />
+    </>
+  );
+}
+
+function Skirted({ wide = false, belly = false }: { wide?: boolean; belly?: boolean }) {
+  const spread = wide ? 9 : 6.5;
+  return (
+    <>
+      <Head />
+      <S d="M16 13 V19" w={wide ? 8 : 6} />
+      <S d="M16 15.5 L10 22.5" w={3.1} />
+      <S d="M16 15.5 L22 22.5" w={3.1} />
+      <path
+        d={`M16 15 L${16 - spread} 31.5 H${16 + spread} Z`}
+        fill="currentColor"
+      />
+      {belly && <circle cx="21" cy="21.5" r="3.6" fill="currentColor" />}
+      <S d="M13.5 31 L12.5 41" w={3.6} />
+      <S d="M18.5 31 L19.5 41" w={3.6} />
+    </>
+  );
+}
+
+function Child({ girl = false }: { girl?: boolean }) {
+  return (
+    <g transform="translate(16 48) scale(0.68) translate(-16 -48)">
+      {girl ? <Skirted /> : <Standing />}
+    </g>
+  );
+}
+
+function Elderly({ skirt = false }: { skirt?: boolean }) {
+  return (
+    <>
+      <Head cx={18.5} cy={9.5} r={4.3} />
+      <S d="M18 15 Q15 20 14.5 27" w={5.6} />
+      <S d="M17 18 L23 24" w={3.1} />
+      {skirt ? (
         <>
-          {/* leaning torso, driving legs, pumping arms */}
-          <path d="M10 10 L16 12 L14 23 L9 21 Z" />
-          <path d="M10.5 21 L5 30 L7.5 31.5 L13 24 Z" />
-          <path d="M13 23 L17 32 L19.5 30.5 L16 22 Z" />
-          <path d="M15 12 L21 16 L19.5 18 L13.5 14.5 Z" />
-          <path d="M10.5 12 L5.5 15.5 L7 17.5 L12 14.5 Z" />
-        </>
-      ) : skirt ? (
-        <>
-          <path d={wide ? "M7 10 H17 L21 26 H3 Z" : "M9 10 H15 L18 26 H6 Z"} />
-          <rect x="9.4" y="26" width="2.4" height="9" rx="1" />
-          <rect x="12.2" y="26" width="2.4" height="9" rx="1" />
-          <rect x={wide ? 4 : 5.6} y="11" width="2" height="9" rx="1" />
-          <rect x={wide ? 18 : 16.4} y="11" width="2" height="9" rx="1" />
+          <path d="M15.5 17.5 L9.5 32 H21.5 Z" fill="currentColor" />
+          <S d="M13.5 31.5 L12.5 42" w={3.4} />
+          <S d="M17.5 31.5 L18 42" w={3.4} />
         </>
       ) : (
         <>
-          <rect x={wide ? 6.5 : 9} y="10" width={wide ? 11 : 6} height="13" rx="2" />
-          <rect x="9.2" y="23" width="2.6" height="12" rx="1" />
-          <rect x="12.2" y="23" width="2.6" height="12" rx="1" />
-          <rect x={wide ? 4 : 6.4} y="11" width="2.1" height="9.5" rx="1" />
-          <rect x={wide ? 17.9 : 15.5} y="11" width="2.1" height="9.5" rx="1" />
+          <S d="M14.5 26.5 L11.5 42" w={4.2} />
+          <S d="M14.5 26.5 L17 42" w={4.2} />
         </>
       )}
-      {belly && <circle cx="17" cy="15.5" r="3.4" />}
-      {cane && (
-        <>
-          <rect x="20" y="17" width="1.8" height="17" rx="0.9" fill={PAINT} />
-          <rect x="18" y="16.4" width="4.6" height="1.8" rx="0.9" fill={PAINT} />
-        </>
+      <S d="M24.5 23.5 V43" w={2.1} paint />
+      <S d="M22.3 23 H26.5" w={2.1} paint />
+    </>
+  );
+}
+
+function Running({ band = false }: { band?: boolean }) {
+  return (
+    <>
+      <Head cx={19} cy={7.5} r={4.4} />
+      <S d="M18 13.5 Q16 19 15 24.5" w={6} />
+      <S d="M17 16 L10 12.5" w={3.2} />
+      <S d="M16.5 19 L24 17" w={3.2} />
+      <S d="M15 24.5 L23 30 L22 41" w={4.2} />
+      <S d="M15 24.5 L10 33 L3.5 35.5" w={4.2} />
+      {band && (
+        <rect x="14.6" y="4.6" width="9" height="2.6" rx="1.3" fill={PAINT} />
       )}
-      {cross && (
-        <g fill={PAINT}>
-          <rect x="10.9" y="12.5" width="2.2" height="7" />
-          <rect x="8.5" y="14.9" width="7" height="2.2" />
-        </g>
-      )}
-      {briefcase && (
-        <g fill={PAINT}>
-          <rect x="15.5" y="21" width="8" height="6.4" rx="1.2" />
-          <rect x="18.2" y="19.4" width="2.6" height="2" rx="0.8" />
-        </g>
-      )}
-      {band && <rect x="7.6" y="3.4" width="8.8" height="3" rx="1.2" fill={PAINT} />}
-    </g>
+    </>
+  );
+}
+
+function Seated() {
+  return (
+    <>
+      <Head cx={12} cy={17} r={4.3} />
+      <S d="M12 22.5 V33" w={5.6} />
+      <S d="M12 25.5 L18.5 30.5" w={3} />
+      <S d="M12 32.5 L20.5 33.5 L20.5 42" w={4} />
+      <S d="M6 42.5 H23" w={2.2} />
+      <circle cx="26" cy="38" r="3.4" fill={PAINT} />
+    </>
   );
 }
 
 function Stroller() {
   return (
-    <g>
-      <circle cx="10" cy="10" r="3.2" />
-      <path d="M4 14 H18 L16.5 23 H5.5 Z" />
-      <rect x="17.5" y="8" width="1.8" height="8" rx="0.9" transform="rotate(18 18.4 12)" />
-      <circle cx="8" cy="28" r="3" />
-      <circle cx="15" cy="28" r="3" />
-      <circle cx="8" cy="28" r="1.1" fill="#0b0c0e" />
-      <circle cx="15" cy="28" r="1.1" fill="#0b0c0e" />
-    </g>
-  );
-}
-
-function Homeless() {
-  return (
-    <g>
-      <circle cx="9" cy="13" r="3.6" />
-      <path d="M6 17 H12.5 L12 27 H5.5 Z" />
-      <rect x="5.5" y="26" width="12" height="2.8" rx="1.4" />
-      <rect x="4" y="28.5" width="16" height="2" rx="1" fill={PAINT} />
-      <circle cx="18.5" cy="24.5" r="3.8" />
-    </g>
+    <>
+      <path d="M6.5 14.5 A 9.5 9.5 0 0 1 16 5 L16 14.5 Z" fill="currentColor" />
+      <path d="M5.5 17 H21 L18.5 27.5 H8.5 Z" fill="currentColor" />
+      <S d="M20.5 17 L26.5 10" w={2.4} />
+      <circle cx="10.5" cy="33.5" r="4" fill="currentColor" />
+      <circle cx="18.5" cy="33.5" r="4" fill="currentColor" />
+      <circle cx="10.5" cy="33.5" r="1.4" fill="#0b0c0e" />
+      <circle cx="18.5" cy="33.5" r="1.4" fill="#0b0c0e" />
+    </>
   );
 }
 
 function Dog() {
   return (
-    <g>
-      <rect x="2.5" y="20" width="15.5" height="6.5" rx="3" />
-      <circle cx="19" cy="18.5" r="3.4" />
-      <path d="M20.5 15.5 L22.5 12.5 L23 16 Z" />
-      <rect x="4" y="26" width="2.2" height="6.5" rx="1" />
-      <rect x="8" y="26" width="2.2" height="6.5" rx="1" />
-      <rect x="12" y="26" width="2.2" height="6.5" rx="1" />
-      <rect x="15.5" y="26" width="2.2" height="6.5" rx="1" />
-      <path d="M2.8 20.5 C0.5 18.5 0.8 15.5 2.6 14.2 L4.2 16.8 Z" />
-    </g>
+    <>
+      <S d="M7 30 H21" w={6.5} />
+      <S d="M8 31 V41" w={3} />
+      <S d="M12.5 31 V41" w={3} />
+      <S d="M17 31 V41" w={3} />
+      <S d="M20.5 31 V41" w={3} />
+      <S d="M21 29 L24.5 26.5" w={4.5} />
+      <circle cx="25.5" cy="25" r="3.9" fill="currentColor" />
+      <S d="M27.5 26 L30.5 26.8" w={3.4} />
+      <path d="M23 21.5 Q22.3 17.5 25 16.5 Q26.6 18.8 25.8 21.8 Z" fill="currentColor" />
+      <S d="M7.5 28.5 Q4 26 4.5 21.5" w={2.6} />
+    </>
   );
 }
 
 function Cat() {
   return (
-    <g>
-      <rect x="4" y="22" width="13" height="5.4" rx="2.7" />
-      <circle cx="18.5" cy="20" r="3" />
-      <path d="M16.4 17.6 L15.8 14.2 L18.2 16 Z" />
-      <path d="M20.6 17.6 L21.2 14.2 L18.8 16 Z" />
-      <rect x="5.2" y="27" width="2" height="5.6" rx="1" />
-      <rect x="8.6" y="27" width="2" height="5.6" rx="1" />
-      <rect x="11.8" y="27" width="2" height="5.6" rx="1" />
-      <rect x="14.6" y="27" width="2" height="5.6" rx="1" />
-      <path d="M4.5 23 C1.5 22 1 17.5 3.5 15.5 L5 18 C3.8 19.2 4 21 5.6 21.6 Z" />
-    </g>
+    <>
+      <S d="M9 31.5 H20" w={5.4} />
+      <S d="M9.5 32 V41" w={2.5} />
+      <S d="M13 32 V41" w={2.5} />
+      <S d="M16.5 32 V41" w={2.5} />
+      <S d="M19.5 32 V41" w={2.5} />
+      <circle cx="23.5" cy="26.5" r="3.6" fill="currentColor" />
+      <path d="M20.7 24.5 L20 19.8 L23.2 22.4 Z" fill="currentColor" />
+      <path d="M26.3 24.5 L27 19.8 L23.8 22.4 Z" fill="currentColor" />
+      <S d="M9 30 Q3.5 29 4.5 22.5" w={2.3} />
+    </>
   );
 }
 
+// ---- role accents ----
+
+const Cross = () => (
+  <g fill={PAINT}>
+    <rect x="24.2" y="2" width="3" height="9" rx="0.9" />
+    <rect x="21.2" y="5" width="9" height="3" rx="0.9" />
+  </g>
+);
+
+const Briefcase = ({ x = 21.5, y = 25 }: { x?: number; y?: number }) => (
+  <g fill={PAINT}>
+    <rect x={x} y={y} width="9.5" height="7" rx="1.4" />
+    <rect x={x + 3.2} y={y - 2} width="3.1" height="2.6" rx="1" />
+  </g>
+);
+
+const Mask = () => <rect x="10.8" y="4.6" width="10.4" height="3.4" rx="1.5" fill={PAINT} />;
+
 const GLYPHS: Record<string, React.ReactNode> = {
-  man: <Person />,
-  woman: <Person skirt />,
-  pregnant_woman: <Person skirt belly />,
+  man: <Standing />,
+  woman: <Skirted />,
+  pregnant_woman: <Skirted belly />,
   baby: <Stroller />,
-  boy: <Person small />,
-  girl: <Person small skirt />,
-  elderly_man: <Person cane />,
-  elderly_woman: <Person cane skirt />,
-  male_doctor: <Person cross />,
-  female_doctor: <Person cross skirt />,
-  male_athlete: <Person running />,
-  female_athlete: <Person running band />,
-  male_executive: <Person briefcase />,
-  female_executive: <Person briefcase skirt />,
-  large_man: <Person wide />,
-  large_woman: <Person wide skirt />,
-  homeless: <Homeless />,
-  criminal: <Person band />,
+  boy: <Child />,
+  girl: <Child girl />,
+  elderly_man: <Elderly />,
+  elderly_woman: <Elderly skirt />,
+  male_doctor: (
+    <>
+      <Standing />
+      <Cross />
+    </>
+  ),
+  female_doctor: (
+    <>
+      <Skirted />
+      <Cross />
+    </>
+  ),
+  male_athlete: <Running />,
+  female_athlete: <Running band />,
+  male_executive: (
+    <>
+      <Standing />
+      <Briefcase />
+    </>
+  ),
+  female_executive: (
+    <>
+      <Skirted />
+      <Briefcase />
+    </>
+  ),
+  large_man: <Standing wide />,
+  large_woman: <Skirted wide />,
+  homeless: <Seated />,
+  criminal: (
+    <>
+      <Standing />
+      <Mask />
+    </>
+  ),
   dog: <Dog />,
   cat: <Cat />,
 };
 
+// The original Moral Machine character art (MIT/Scalable Cooperation),
+// mirrored locally in public/cast. The hand-drawn set above remains as
+// a fallback for any id without art.
 export function CharacterGlyph({
   id,
   size = 40,
@@ -174,24 +246,42 @@ export function CharacterGlyph({
   size?: number;
   color?: string;
 }) {
+  if (GLYPHS[id]) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={`/cast/${id}.svg`}
+        alt=""
+        height={size}
+        style={{ height: size, width: "auto", display: "block" }}
+        draggable={false}
+      />
+    );
+  }
   return (
     <svg
-      width={size * 0.6}
+      width={size * (32 / 48)}
       height={size}
-      viewBox="0 0 24 40"
-      fill={color}
+      viewBox="0 0 32 48"
       aria-hidden="true"
-      style={{ display: "block" }}
+      style={{ display: "block", color }}
     >
-      {GLYPHS[id] ?? <circle cx="12" cy="20" r="8" />}
+      <circle cx="16" cy="24" r="10" fill="currentColor" />
     </svg>
   );
 }
 
-// Top-view autonomous vehicle, pointed up-road
-export function CarTopView({ size = 64 }: { size?: number }) {
+// Top-view autonomous vehicle; down = travelling toward the bottom
+// of the page
+export function CarTopView({ size = 64, down = false }: { size?: number; down?: boolean }) {
   return (
-    <svg width={size * 0.55} height={size} viewBox="0 0 22 40" aria-hidden="true">
+    <svg
+      width={size * 0.55}
+      height={size}
+      viewBox="0 0 22 40"
+      aria-hidden="true"
+      style={down ? { transform: "rotate(180deg)" } : undefined}
+    >
       <rect x="3" y="2" width="16" height="36" rx="6" fill={PAINT} />
       <rect x="5.5" y="8" width="11" height="7" rx="2.5" fill="#0b0c0e" opacity="0.85" />
       <rect x="5.5" y="27" width="11" height="5.5" rx="2.5" fill="#0b0c0e" opacity="0.6" />
@@ -205,36 +295,70 @@ export function CarTopView({ size = 64 }: { size?: number }) {
   );
 }
 
-// Trajectory arrows from the car into each lane
+// The car sits in the straight lane (under A); staying goes dead
+// ahead, swerving crosses the divider into B. Drawn in pixel space
+// from the measured container width, so nothing stretches.
 export function Trajectories({ choice }: { choice?: "A" | "B" | null }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [w, setW] = useState(0);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const ro = new ResizeObserver((entries) => setW(entries[0].contentRect.width));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
   const c = (opt: "A" | "B") =>
     choice === opt ? "#e5484d" : choice ? "#3a3e46" : "var(--paint)";
+  const h = 56;
+  const xa = w * 0.25;
+  const xb = w * 0.75;
   return (
-    <svg viewBox="0 0 200 60" className="h-14 w-full" aria-hidden="true">
-      <defs>
-        <marker id="ah-a" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
-          <path d="M0 0 L8 4 L0 8 Z" fill={c("A")} />
-        </marker>
-        <marker id="ah-b" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
-          <path d="M0 0 L8 4 L0 8 Z" fill={c("B")} />
-        </marker>
-      </defs>
-      <path
-        d="M100 58 C 90 40, 60 30, 45 8"
-        fill="none"
-        stroke={c("A")}
-        strokeWidth="3"
-        strokeDasharray="7 6"
-        markerEnd="url(#ah-a)"
-      />
-      <path
-        d="M100 58 C 110 40, 140 30, 155 8"
-        fill="none"
-        stroke={c("B")}
-        strokeWidth="3"
-        strokeDasharray="7 6"
-        markerEnd="url(#ah-b)"
-      />
-    </svg>
+    <div ref={ref} className="h-14 w-full" aria-hidden="true">
+      {w > 0 && (
+        <svg width={w} height={h}>
+          <defs>
+            <marker
+              id="ah-a"
+              markerUnits="userSpaceOnUse"
+              markerWidth="11"
+              markerHeight="11"
+              refX="5.5"
+              refY="5.5"
+              orient="auto"
+            >
+              <path d="M0 0 L11 5.5 L0 11 Z" fill={c("A")} />
+            </marker>
+            <marker
+              id="ah-b"
+              markerUnits="userSpaceOnUse"
+              markerWidth="11"
+              markerHeight="11"
+              refX="5.5"
+              refY="5.5"
+              orient="auto"
+            >
+              <path d="M0 0 L11 5.5 L0 11 Z" fill={c("B")} />
+            </marker>
+          </defs>
+          <path
+            d={`M${xa} 4 L${xa} ${h - 12}`}
+            fill="none"
+            stroke={c("A")}
+            strokeWidth="2.5"
+            strokeDasharray="7 6"
+            markerEnd="url(#ah-a)"
+          />
+          <path
+            d={`M${xa} 4 C ${xa} ${h * 0.9}, ${xb} ${h * 0.05}, ${xb} ${h - 12}`}
+            fill="none"
+            stroke={c("B")}
+            strokeWidth="2.5"
+            strokeDasharray="7 6"
+            markerEnd="url(#ah-b)"
+          />
+        </svg>
+      )}
+    </div>
   );
 }

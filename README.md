@@ -47,6 +47,12 @@ character, as on the site.
   pick a model, ask. Verdict, reason, and the exact prompt shown.
   Logged to `data/moral-custom/runs.jsonl`.
 
+## Credits
+
+Character artwork is the Moral Machine's own (MIT Media Lab /
+Scalable Cooperation), mirrored locally in `public/cast/` for this
+research replication. All other art is original.
+
 ## Run
 
 ```bash

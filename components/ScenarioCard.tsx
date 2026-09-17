@@ -114,24 +114,29 @@ export function OutcomePanel({
   );
 }
 
-export function SceneFooter({
+export function SceneTop({
   choice,
   deliberating,
 }: {
   choice?: "A" | "B" | null;
   deliberating?: boolean;
 }) {
+  // The car approaches from the top of the scene, in the straight
+  // lane dead ahead of Outcome A, travelling down the page
   return (
-    <div className="relative -mt-1">
-      <Trajectories choice={choice ?? null} />
-      <div className="flex justify-center">
+    <div className="relative -mb-1">
+      <div
+        className="flex w-fit -translate-x-1/2 flex-col items-center gap-1"
+        style={{ marginLeft: "25%" }}
+      >
+        <div className="whitespace-nowrap text-[10px] tracking-[0.28em] text-ink-faint">
+          {deliberating ? "BRAKES FAILED — DELIBERATING" : "AUTONOMOUS VEHICLE · BRAKES FAILED"}
+        </div>
         <div className={deliberating ? "deliberating" : ""}>
-          <CarTopView size={62} />
+          <CarTopView size={62} down />
         </div>
       </div>
-      <div className="mt-1 text-center text-[10px] tracking-[0.28em] text-ink-faint">
-        {deliberating ? "BRAKES FAILED — DELIBERATING" : "AUTONOMOUS VEHICLE · BRAKES FAILED"}
-      </div>
+      <Trajectories choice={choice ?? null} />
     </div>
   );
 }
@@ -149,12 +154,12 @@ export default function ScenarioCard({
     choice ? (choice === opt ? "KILLED" : "SPARED") : null;
   return (
     <div>
+      <SceneTop choice={choice} deliberating={deliberating} />
       <div className="flex items-stretch gap-3 md:gap-4">
         <OutcomePanel side={scenario.a} option="A" verdict={verdictFor("A")} />
         <div className="lane-divider w-1.5 shrink-0 rounded-full" />
         <OutcomePanel side={scenario.b} option="B" verdict={verdictFor("B")} />
       </div>
-      <SceneFooter choice={choice} deliberating={deliberating} />
     </div>
   );
 }

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Btn, ModelSelect } from "./ui";
-import { OutcomePanel, SceneFooter } from "./ScenarioCard";
+import { OutcomePanel, SceneTop } from "./ScenarioCard";
 import { CharacterGlyph } from "./glyphs";
 import { CHARACTERS, describeGroup } from "@/lib/characters";
 import type { Side } from "@/lib/scenarios";
@@ -179,6 +179,7 @@ export default function DesignerApp() {
 
       {/* the scene */}
       <div className="mt-5">
+        <SceneTop choice={choice} deliberating={busy} />
         <div className="flex items-stretch gap-3 md:gap-4">
           <div className="flex flex-1 flex-col gap-2">
             <DraggableLane
@@ -202,7 +203,6 @@ export default function DesignerApp() {
             <LaneSettings draft={b} onChange={(d) => { setResult(null); setB(d); }} />
           </div>
         </div>
-        <SceneFooter choice={choice} deliberating={busy} />
       </div>
 
       {result && (
