@@ -96,7 +96,7 @@ export default function JudgeApp() {
     run && view.verdict && run.answers[heroIndex] ? run.answers[heroIndex] : null;
 
   return (
-    <main className="mx-auto max-w-5xl px-4 py-8 md:px-6">
+    <main className="mx-auto min-h-[calc(100dvh-3rem)] max-w-5xl px-4 pb-40 pt-8 md:px-6">
       <div>
         <h1 className="display text-5xl leading-none text-ink md:text-6xl">
           WHO DOES THE <span className="text-paint">MODEL</span> CHOOSE?
