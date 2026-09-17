@@ -233,7 +233,7 @@ export async function stepBattery(): Promise<void> {
       reason: "",
       raw: res.raw,
     });
-    if (run.consecutiveErrors >= 3) {
+    if (run.consecutiveErrors >= 5) {
       await finish(run, "error");
       await writeState(EXP, state);
       return;

@@ -173,7 +173,7 @@ export async function askObject<T>(
       prompt,
       schema: jsonSchema<T>(schema),
       maxRetries: 1,
-      abortSignal: AbortSignal.timeout(35_000),
+      abortSignal: AbortSignal.timeout(45_000),
     });
     return {
       object: res.object,
