@@ -94,7 +94,13 @@ export default function Dashboard({ runs }: { runs: RunSummary[] }) {
                     left: `calc(${(v * 100).toFixed(1)}% - 3px)`,
                     background: PALETTE[i % PALETTE.length],
                     opacity: dimmed(r.model),
-                    zIndex: focus === r.model ? 5 : 1,
+                    zIndex: focus === r.model ? 50 : 1,
+                    transform: focus === r.model ? "scaleX(1.9) scaleY(1.25)" : undefined,
+                    boxShadow:
+                      focus === r.model
+                        ? `0 0 0 1.5px #0b0c0e, 0 0 10px ${PALETTE[i % PALETTE.length]}`
+                        : undefined,
+                    transition: "opacity 150ms ease, transform 150ms ease",
                   }}
                   onMouseEnter={() => setFocus(r.model)}
                   onMouseLeave={() => setFocus(null)}
