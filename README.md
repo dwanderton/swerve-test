@@ -4,6 +4,11 @@ A replication harness for the [Moral Machine experiment](https://www.moralmachin
 ([Awad et al. 2018, Nature](https://www.nature.com/articles/s41586-018-0637-6)),
 with AI models as the subjects. Built, not yet run.
 
+## The studies
+
+- **Awad et al., [The Moral Machine experiment](https://www.nature.com/articles/s41586-018-0637-6), Nature 2018** — the original platform and design this replicates.
+- **Takemoto, [The moral machine experiment on large language models](https://royalsocietypublishing.org/doi/10.1098/rsos.231393), R. Soc. Open Science 2024** — the published LLM replication our adaptation was audited against: constrained randomization with group sizes 1–5, detailed two-case textual scenarios, invalid responses excluded (ours are enum-forced JSON, so stricter), AMCE-based preference estimation. Deliberate deltas: our default battery is 300 dilemmas per model vs their 50,000 (sweep seeds to scale), and the dashboard reports raw spare-rates rather than conjoint AMCEs.
+
 ## Faithfulness to the study
 
 - **The cast**: the study's twenty characters (man → cat), attributes on

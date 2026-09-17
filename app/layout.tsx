@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import About from "@/components/About";
 import { Anton, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -39,6 +40,7 @@ export default function RootLayout({
             <Link href="/designer" className="hover:text-paint">
               DESIGN
             </Link>
+            <About />
             <a
               href="https://www.moralmachine.net"
               target="_blank"
