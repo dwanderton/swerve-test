@@ -94,6 +94,7 @@ export async function GET() {
           models: progPeek.models,
           currentModel: progPeek.models[progPeek.step % progPeek.models.length],
           last: progPeek.last ?? null,
+          pending: progPeek.pending ?? null,
         }
       : null,
     summary,

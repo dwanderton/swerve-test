@@ -46,6 +46,7 @@ type ProgramInfo = {
     choice: "A" | "B" | "ERROR";
     reason: string;
   } | null;
+  pending: { model: string; seed: number; sessions: number; within: number } | null;
 };
 
 const VERDICT_HOLD_MS = 5_000;
@@ -296,12 +297,20 @@ function SkeletonTile({ label }: { label: string }) {
 // Shows the latest verdict - scenario rebuilt deterministically from
 // (seed, sessions, within) - with the model on the next dilemma named.
 function ProgramTheater({ program }: { program: ProgramInfo }) {
-  const last = program.last;
+  // pending scenario previews before the verdict; last holds after
+  const view = program.pending
+    ? { ...program.pending, choice: null as "A" | "B" | null, reason: "" }
+    : program.last && program.last.choice !== "ERROR"
+      ? { ...program.last, choice: program.last.choice as "A" | "B" }
+      : program.last
+        ? { ...program.last, choice: null }
+        : null;
   const battery = useMemo(
-    () => (last ? buildBattery(last.seed, last.sessions) : null),
-    [last?.seed, last?.sessions],
+    () => (view ? buildBattery(view.seed, view.sessions) : null),
+    [view?.seed, view?.sessions],
   );
-  const scenario = battery && last ? battery[last.within] : null;
+  const scenario = battery && view ? battery[view.within] : null;
+  const last = program.last;
   return (
     <>
       <div className="mt-6 flex flex-wrap items-baseline justify-between gap-3 rounded-lg border border-line bg-surface/50 px-4 py-3">
@@ -321,21 +330,22 @@ function ProgramTheater({ program }: { program: ProgramInfo }) {
           </span>
         </div>
       </div>
-      {scenario && last && (
+      {scenario && view && (
         <div className="mt-6">
           <div className="mb-2 text-[10px] tracking-[0.24em] text-ink-faint">
-            {modelName(last.model).toUpperCase()} JUDGED {scenario.id.toUpperCase()} ·{" "}
+            {modelName(view.model).toUpperCase()}{" "}
+            {program.pending ? "FACES" : "JUDGED"} {scenario.id.toUpperCase()} ·{" "}
             {scenario.dimension === "random"
               ? "FULLY RANDOM"
               : `TESTS ${scenario.testedLabel.toUpperCase()}`}
           </div>
           <ScenarioCard
             scenario={scenario}
-            choice={last.choice !== "ERROR" ? last.choice : null}
-            deliberating={false}
+            choice={view.choice}
+            deliberating={!!program.pending}
           />
           <div className="mt-3 h-[3.4rem]">
-            {last.reason && (
+            {!program.pending && last?.reason && (
               <div className="flex h-full items-center rounded border-l-4 border-paint bg-surface/60 px-4 text-[12px] italic text-ink">
                 <span className="line-clamp-2">
                   <span className="text-paint">{modelName(last.model)}:</span> “{last.reason}”

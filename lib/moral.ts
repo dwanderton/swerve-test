@@ -288,7 +288,15 @@ export type Program = {
   step: number; // global step across all models
   startedAt: number;
   last?: ProgramLast;
+  lastAt?: number;
+  pending?: { model: string; seed: number; sessions: number; within: number };
+  pendingAt?: number;
 };
+
+// Presentation pacing: the scenario shows on screen before the model
+// is asked, and the verdict holds before the next scenario appears.
+export const PROGRAM_PREVIEW_MS = 3_500;
+export const PROGRAM_HOLD_MS = 3_500;
 
 const PROGRAM = "moral-program";
 const PROG_LISTS = "moral";
@@ -308,12 +316,25 @@ export async function stepProgram(): Promise<void> {
     return;
   }
 
+  const now = Date.now();
   const mIdx = prog.step % prog.models.length;
   const model = prog.models[mIdx];
   const dIdx = Math.floor(prog.step / prog.models.length);
   const chunk = Math.floor(dIdx / perChunk);
   const seed = prog.seeds[chunk];
   const within = dIdx % perChunk;
+
+  // Phase 1: publish the scenario so viewers see it before any call
+  if (!prog.pending) {
+    if (prog.lastAt && now - prog.lastAt < PROGRAM_HOLD_MS) return; // verdict still holding
+    prog.pending = { model, seed, sessions: prog.sessions, within };
+    prog.pendingAt = now;
+    await writeProgram(prog);
+    return;
+  }
+  // Phase 2: let the preview breathe, then ask
+  if (prog.pendingAt && now - prog.pendingAt < PROGRAM_PREVIEW_MS) return;
+
   const battery = buildBattery(seed, prog.sessions);
   const s = battery[within];
 
@@ -386,6 +407,9 @@ export async function stepProgram(): Promise<void> {
     choice: answer.choice,
     reason: answer.reason,
   };
+  prog.lastAt = Date.now();
+  prog.pending = undefined;
+  prog.pendingAt = undefined;
   if (prog.step >= totalSteps) prog.active = false;
   await writeProgram(prog);
 }
