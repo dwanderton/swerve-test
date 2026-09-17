@@ -43,7 +43,8 @@ export async function GET() {
   const charTotals: Record<string, { saved: number; killed: number }> = {};
   let verdicts = 0;
   for (const run of all) {
-    verdicts += run.answers.filter((a) => a.choice !== "ERROR").length;
+    // slim summaries carry no answers; index is the count asked
+    verdicts += run.answers.length > 0 ? run.answers.filter((a) => a.choice !== "ERROR").length : (run.index ?? 0);
     for (const [id, s] of Object.entries(run.characterStats ?? {})) {
       const t = (charTotals[id] ??= { saved: 0, killed: 0 });
       t.saved += s.saved;

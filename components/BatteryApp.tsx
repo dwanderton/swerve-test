@@ -126,7 +126,7 @@ export default function JudgeApp() {
       </div>
 
       <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4">
-        {data?.summary && data.summary.verdicts > 0 ? (
+        {data?.summary && data.summary.models > 0 ? (
           <>
             <CharTile label="MOST SPARED" id={data.summary.mostSaved} tone="walk" />
             <CharTile label="MOST KILLED" id={data.summary.mostKilled} tone="blood" />
