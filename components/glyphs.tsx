@@ -271,6 +271,35 @@ export function CharacterGlyph({
   );
 }
 
+// Concrete barrier with hazard cap (MM's bucket has no barrier asset;
+// this one is ours, consistent with the hazard styling)
+export function Barrier({ height = 36 }: { height?: number }) {
+  return (
+    <svg
+      viewBox="0 0 140 36"
+      style={{ height, width: "auto", display: "block" }}
+      aria-hidden="true"
+    >
+      <defs>
+        <pattern
+          id="hzp"
+          width="14"
+          height="14"
+          patternTransform="rotate(45)"
+          patternUnits="userSpaceOnUse"
+        >
+          <rect width="14" height="14" fill="#ffb400" />
+          <rect x="7" width="7" height="14" fill="#14161a" />
+        </pattern>
+      </defs>
+      <rect x="1" y="5" width="138" height="12" rx="2" fill="url(#hzp)" stroke="#0b0c0e" />
+      <rect x="1" y="17" width="138" height="14" rx="2" fill="#4a4f58" />
+      <rect x="10" y="31" width="18" height="4" rx="1" fill="#33373e" />
+      <rect x="112" y="31" width="18" height="4" rx="1" fill="#33373e" />
+    </svg>
+  );
+}
+
 // Top-view autonomous vehicle; down = travelling toward the bottom
 // of the page
 export function CarTopView({ size = 64, down = false }: { size?: number; down?: boolean }) {

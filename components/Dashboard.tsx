@@ -75,13 +75,16 @@ export default function Dashboard({ runs }: { runs: RunSummary[] }) {
               return (
                 <div
                   key={r.id}
-                  title={`${modelName(r.model)}: ${Math.round(v * 100)}%`}
-                  className="pip-drop absolute top-1 h-5 w-1.5 rounded-sm"
+                  className="group pip-drop absolute top-1 h-5 w-1.5 rounded-sm"
                   style={{
                     left: `calc(${(v * 100).toFixed(1)}% - 3px)`,
                     background: PALETTE[i % PALETTE.length],
                   }}
-                />
+                >
+                  <div className="pointer-events-none absolute -top-8 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded border border-line bg-bg px-2 py-1 text-[10px] text-ink opacity-0 transition-opacity group-hover:opacity-100">
+                    {modelName(r.model)} · {Math.round(v * 100)}%
+                  </div>
+                </div>
               );
             })}
           </div>

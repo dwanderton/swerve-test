@@ -33,7 +33,7 @@ export async function POST(req: Request) {
     startBattery(
       body.model,
       Number.isFinite(Number(body.seed)) ? Number(body.seed) : 1,
-      Math.min(Math.max(Number(body.sessions) || 4, 1), 200),
+      Math.min(Math.max(Number(body.sessions) || 20, 1), 200),
     );
   } else if (body.action === "stop") {
     stopBattery();

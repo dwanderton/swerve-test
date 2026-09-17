@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Btn, ModelSelect, Panel, usePoll } from "./ui";
 import { modelName } from "@/lib/models";
 import type { DimensionScore, MoralRun } from "@/lib/moral";
@@ -24,7 +24,7 @@ export default function JudgeApp() {
   const { data, act } = usePoll<{ run: MoralRun | null; runs: Summary[] }>("/api/moral");
   const [model, setModel] = useState("anthropic/claude-haiku-4.5");
   const [seed, setSeed] = useState(1);
-  const [sessions, setSessions] = useState(4);
+  const [sessions, setSessions] = useState(20);
   const run = data?.run ?? null;
   const total = run ? run.sessions * SESSION_SIZE : 0;
 
@@ -35,12 +35,37 @@ export default function JudgeApp() {
     [run?.seed, run?.sessions],
   );
   const judging = run?.status === "running";
-  const heroIndex = judging
-    ? Math.min(run!.index, total - 1)
-    : Math.max(0, (run?.answers.length ?? 0) - 1);
+
+  // Verdict choreography: stamp lands on the answered dilemma, holds,
+  // the cards fade out, the next dilemma fades in
+  const answersLen = run?.answers.length ?? 0;
+  const runId = run?.id ?? null;
+  const [view, setView] = useState({ idx: 0, verdict: false, out: false });
+  useEffect(() => {
+    setView({ idx: 0, verdict: false, out: false });
+  }, [runId]);
+  useEffect(() => {
+    if (!run || answersLen === 0) return;
+    const last = answersLen - 1;
+    setView({ idx: last, verdict: true, out: false });
+    if (run.status === "running" && answersLen < total) {
+      const t1 = setTimeout(() => setView({ idx: last, verdict: true, out: true }), 1_700);
+      const t2 = setTimeout(
+        () => setView({ idx: answersLen, verdict: false, out: false }),
+        2_150,
+      );
+      return () => {
+        clearTimeout(t1);
+        clearTimeout(t2);
+      };
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [answersLen, runId, run?.status, total]);
+
+  const heroIndex = Math.min(view.idx, Math.max(total - 1, 0));
   const hero = battery?.[heroIndex] ?? null;
   const heroAnswer =
-    run && run.answers.length > heroIndex && !judging ? run.answers[heroIndex] : null;
+    run && view.verdict && run.answers[heroIndex] ? run.answers[heroIndex] : null;
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-8 md:px-6">
@@ -112,16 +137,18 @@ export default function JudgeApp() {
                 : `TESTS ${hero.testedLabel.toUpperCase()}`}
             </span>
           </div>
-          <ScenarioCard
-            scenario={hero}
-            choice={heroAnswer && heroAnswer.choice !== "ERROR" ? heroAnswer.choice : null}
-            deliberating={judging}
-          />
-          {heroAnswer?.reason && (
-            <div className="mt-3 rounded border-l-4 border-paint bg-surface/60 px-4 py-2 text-[12px] italic text-ink">
-              “{heroAnswer.reason}”
-            </div>
-          )}
+          <div key={`${heroIndex}-${view.verdict}`} className={view.out ? "card-out" : "card-in"}>
+            <ScenarioCard
+              scenario={hero}
+              choice={heroAnswer && heroAnswer.choice !== "ERROR" ? heroAnswer.choice : null}
+              deliberating={judging && !view.verdict}
+            />
+            {heroAnswer?.reason && (
+              <div className="mt-3 rounded border-l-4 border-paint bg-surface/60 px-4 py-2 text-[12px] italic text-ink">
+                “{heroAnswer.reason}”
+              </div>
+            )}
+          </div>
         </div>
       )}
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { byId } from "@/lib/characters";
-import { CarTopView, CharacterGlyph, Trajectories } from "./glyphs";
+import { Barrier, CarTopView, CharacterGlyph, Trajectories } from "./glyphs";
 import type { Scenario, Side } from "@/lib/scenarios";
 
 // The dilemma as a road scene: the AV at the bottom, dashed
@@ -39,9 +39,11 @@ function Context({ side }: { side: Side }) {
   if (side.where === "passengers") {
     return (
       <div className="mt-3 space-y-1.5">
-        <div className="hazard h-3.5 w-full rounded-sm" />
+        <div className="flex justify-center">
+          <Barrier height={34} />
+        </div>
         <div className="text-center text-[10px] tracking-[0.28em] text-ink-faint">
-          THESE ARE THE VEHICLE&apos;S PASSENGERS · CONCRETE BARRIER AHEAD
+          CONCRETE BARRIER AHEAD
         </div>
       </div>
     );
@@ -96,7 +98,18 @@ export function OutcomePanel({
           {option === "A" ? "NO INTERVENTION" : "INTERVENE"}
         </span>
       </div>
-      <Crowd characters={side.characters} onRemove={onRemove} />
+      {side.where === "passengers" ? (
+        <div className="relative mx-auto w-fit max-w-full rounded-2xl border-4 border-paint bg-bg/70 px-5 pb-3 pt-1.5">
+          <div className="mb-1 text-center text-[9px] tracking-[0.3em] text-paint">
+            IN THE VEHICLE
+          </div>
+          <Crowd characters={side.characters} onRemove={onRemove} />
+          <div className="absolute -bottom-2.5 left-3 h-5 w-5 rounded-full bg-[#2c2e33]" />
+          <div className="absolute -bottom-2.5 right-3 h-5 w-5 rounded-full bg-[#2c2e33]" />
+        </div>
+      ) : (
+        <Crowd characters={side.characters} onRemove={onRemove} />
+      )}
       <Context side={side} />
       {verdict && (
         <div className="stamp pointer-events-none absolute inset-0 flex items-center justify-center">

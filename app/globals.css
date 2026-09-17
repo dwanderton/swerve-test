@@ -116,3 +116,21 @@ select option {
   background: var(--paint);
   color: #0b0c0e;
 }
+
+@keyframes card-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.card-in {
+  animation: card-in 0.4s ease-out both;
+}
+.card-out {
+  opacity: 0;
+  transition: opacity 0.45s ease;
+}
