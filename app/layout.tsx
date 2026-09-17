@@ -44,14 +44,6 @@ export default function RootLayout({
               RESULTS
             </Link>
             <About />
-            <a
-              href="https://www.moralmachine.net"
-              target="_blank"
-              rel="noreferrer"
-              className="hidden hover:text-paint sm:block"
-            >
-              ORIGINAL ↗
-            </a>
           </div>
         </nav>
         {children}

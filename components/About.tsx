@@ -52,7 +52,16 @@ export default function About() {
                   : the twenty-character cast, sessions of two dilemmas per character
                   dimension plus one fully random, and the three contextual factors —
                   interventionism, passengers vs pedestrians, legality — crossed into
-                  every scenario at random.
+                  every scenario at random. The original platform lives at{" "}
+                  <a
+                    href="https://www.moralmachine.net"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-ink underline decoration-line underline-offset-2"
+                  >
+                    moralmachine.net ↗
+                  </a>
+                  .
                 </p>
                 <p className="mt-2">
                   The LLM adaptation follows{" "}
