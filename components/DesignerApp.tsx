@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Btn, ModelSelect, Panel } from "./ui";
-import { CHARACTERS, describeGroup } from "@/lib/characters";
+import { Btn, ModelSelect } from "./ui";
+import { OutcomePanel } from "./ScenarioCard";
+import { CHARACTERS, EMOJI, describeGroup } from "@/lib/characters";
 import type { Side } from "@/lib/scenarios";
 
 type SideDraft = {
@@ -17,87 +18,84 @@ function toSide(d: SideDraft): Side {
   const characters = Object.entries(d.counts).flatMap(([id, n]) =>
     Array.from({ length: n }, () => id),
   );
-  return {
-    characters,
-    where: d.where,
-    legal: d.where === "passengers" ? null : d.legal,
-  };
+  return { characters, where: d.where, legal: d.where === "passengers" ? null : d.legal };
 }
 
-function SideEditor({
-  title,
+function SideControls({
   draft,
   onChange,
 }: {
-  title: string;
   draft: SideDraft;
   onChange: (d: SideDraft) => void;
 }) {
   const total = Object.values(draft.counts).reduce((a, b) => a + b, 0);
   const bump = (id: string, delta: number) => {
+    if (delta > 0 && total >= 10) return;
     const next = { ...draft.counts, [id]: Math.max(0, (draft.counts[id] ?? 0) + delta) };
     if (next[id] === 0) delete next[id];
     onChange({ ...draft, counts: next });
   };
   return (
-    <Panel title={title}>
-      <div className="mb-3 flex flex-wrap items-center gap-3 font-mono text-[11px]">
-        <label className="flex items-center gap-2">
+    <div className="rounded-lg border border-line bg-surface/50 p-3">
+      <div className="mb-2 flex flex-wrap items-center gap-3 text-[10px] tracking-[0.2em]">
+        <label className="flex items-center gap-1.5 text-ink-muted">
           <input
             type="radio"
             checked={draft.where === "pedestrians"}
             onChange={() => onChange({ ...draft, where: "pedestrians" })}
           />
-          pedestrians
+          PEDESTRIANS
         </label>
-        <label className="flex items-center gap-2">
+        <label className="flex items-center gap-1.5 text-ink-muted">
           <input
             type="radio"
             checked={draft.where === "passengers"}
             onChange={() => onChange({ ...draft, where: "passengers" })}
           />
-          passengers
+          PASSENGERS
         </label>
         {draft.where === "pedestrians" && (
-          <label className="flex items-center gap-2 text-ink-muted">
-            <input
-              type="checkbox"
-              checked={draft.legal}
-              onChange={(e) => onChange({ ...draft, legal: e.target.checked })}
-            />
-            crossing legally
-          </label>
+          <button
+            onClick={() => onChange({ ...draft, legal: !draft.legal })}
+            className={draft.legal ? "text-walk" : "text-primary"}
+          >
+            {draft.legal ? "● WALK SIGNAL" : "✕ JAYWALKING"}
+          </button>
         )}
         <span className="ml-auto text-ink-faint">{total}/10</span>
       </div>
-      <div className="grid grid-cols-2 gap-1 sm:grid-cols-3">
+      <div className="grid grid-cols-4 gap-1 sm:grid-cols-5">
         {CHARACTERS.map((c) => {
           const n = draft.counts[c.id] ?? 0;
           return (
-            <div
+            <button
               key={c.id}
-              className={`flex items-center justify-between rounded border px-2 py-1 font-mono text-[10px] ${
-                n > 0 ? "border-ink-faint text-ink" : "border-line/50 text-ink-faint"
+              onClick={() => bump(c.id, 1)}
+              onContextMenu={(e) => {
+                e.preventDefault();
+                bump(c.id, -1);
+              }}
+              title={`${c.label} — click to add, right-click to remove`}
+              className={`relative rounded border px-1 py-1.5 text-center transition-colors ${
+                n > 0
+                  ? "border-paint/70 bg-paint/10"
+                  : "border-line/60 hover:border-ink-faint"
               }`}
             >
-              <span className="truncate">{c.label.replace(/^an? /, "")}</span>
-              <span className="flex items-center gap-1">
-                <button onClick={() => bump(c.id, -1)} className="px-1 hover:text-primary">
-                  −
-                </button>
-                <span className="w-4 text-center tabular-nums">{n}</span>
-                <button
-                  onClick={() => total < 10 && bump(c.id, 1)}
-                  className="px-1 hover:text-emerald-500"
-                >
-                  +
-                </button>
+              <span className="text-xl leading-none">{EMOJI[c.id]}</span>
+              <span className="block truncate text-[8px] tracking-wide text-ink-faint">
+                {c.label.replace(/^an? /, "")}
               </span>
-            </div>
+              {n > 0 && (
+                <span className="display absolute -right-1 -top-1 rounded bg-paint px-1 text-[10px] text-black">
+                  {n}
+                </span>
+              )}
+            </button>
           );
         })}
       </div>
-    </Panel>
+    </div>
   );
 }
 
@@ -115,6 +113,7 @@ export default function DesignerApp() {
 
   const ready =
     Object.values(a.counts).some((n) => n > 0) && Object.values(b.counts).some((n) => n > 0);
+  const choice = result && !result.error ? (result.choice as "A" | "B") : null;
 
   const ask = async () => {
     setBusy(true);
@@ -132,58 +131,67 @@ export default function DesignerApp() {
   };
 
   return (
-    <main className="mx-auto max-w-5xl px-6 py-8">
+    <main className="mx-auto max-w-5xl px-4 py-8 md:px-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="font-mono text-sm tracking-[0.3em] text-ink">SCENARIO DESIGNER</h1>
-          <p className="mt-1 font-mono text-[11px] tracking-[0.14em] text-ink-faint">
-            BUILD YOUR OWN DILEMMA · OUTCOME A = CONTINUE STRAIGHT · B = SWERVE
+          <h1 className="display text-5xl leading-none text-ink md:text-6xl">
+            BUILD THE <span className="text-paint">DILEMMA</span>
+          </h1>
+          <p className="mt-2 text-[11px] tracking-[0.2em] text-ink-faint">
+            COMPOSE BOTH OUTCOMES. CLICK ADDS A CHARACTER, RIGHT-CLICK REMOVES. THEN PUT IT
+            TO A MODEL.
           </p>
         </div>
         <div className="flex items-end gap-3">
-          <ModelSelect value={model} onChange={setModel} label="MODEL" />
-          <Btn tone="danger" disabled={!ready || busy} onClick={ask}>
-            {busy ? "ASKING…" : "ASK THE MODEL"}
+          <ModelSelect value={model} onChange={setModel} label="MODEL ON TRIAL" />
+          <Btn tone="go" disabled={!ready || busy} onClick={ask}>
+            {busy ? "DELIBERATING…" : "ASK THE MODEL"}
           </Btn>
         </div>
       </div>
 
-      <div className="mt-6 grid gap-4 lg:grid-cols-2">
-        <SideEditor title="OUTCOME A — KILLED IF CHOSEN (STRAIGHT)" draft={a} onChange={setA} />
-        <SideEditor title="OUTCOME B — KILLED IF CHOSEN (SWERVE)" draft={b} onChange={setB} />
+      <div className="mt-6 flex items-stretch gap-3 md:gap-4">
+        <OutcomePanel
+          side={toSide(a)}
+          option="A"
+          verdict={choice ? (choice === "A" ? "KILLED" : "SPARED") : null}
+        />
+        <div className="lane-divider w-1.5 shrink-0 rounded-full" />
+        <OutcomePanel
+          side={toSide(b)}
+          option="B"
+          verdict={choice ? (choice === "B" ? "KILLED" : "SPARED") : null}
+        />
       </div>
 
-      <Panel title="VERDICT" className="mt-4">
-        {result ? (
-          <div className="space-y-2 font-mono text-[11px]">
-            <div>
-              <span className="text-ink-faint">CHOICE </span>
-              <span className={result.error ? "text-amber-500" : "text-primary"}>
-                {result.choice}
+      <div className="mt-4 grid gap-4 lg:grid-cols-2">
+        <SideControls draft={a} onChange={setA} />
+        <SideControls draft={b} onChange={setB} />
+      </div>
+
+      {result && (
+        <div className="mt-5 rounded border-l-4 border-paint bg-surface/60 px-4 py-3 text-[12px]">
+          {result.error ? (
+            <span className="text-paint">COMMS ERROR — {result.reason || "no verdict"}</span>
+          ) : (
+            <>
+              <span className="text-ink-faint">VERDICT: </span>
+              <span className="text-primary">
+                kills {describeGroup(toSide(choice === "A" ? a : b).characters)}
               </span>
-              {!result.error && (
-                <span className="text-ink-muted">
-                  {" "}
-                  — kills{" "}
-                  {describeGroup(toSide(result.choice === "A" ? a : b).characters)}
-                </span>
-              )}
-            </div>
-            {result.reason && <div className="italic text-ink">“{result.reason}”</div>}
-            <details className="text-ink-faint">
-              <summary className="cursor-pointer">prompt shown to the model</summary>
-              <pre className="mt-2 whitespace-pre-wrap rounded border border-line/50 bg-bg p-3 text-[10px]">
-                {result.prompt}
-              </pre>
-            </details>
-          </div>
-        ) : (
-          <div className="font-mono text-[11px] text-ink-faint">
-            Compose both outcomes, pick a model, ask. Every verdict is logged to
-            data/moral-custom/runs.jsonl.
-          </div>
-        )}
-      </Panel>
+              {result.reason && <span className="italic text-ink"> — “{result.reason}”</span>}
+            </>
+          )}
+          <details className="mt-2 text-ink-faint">
+            <summary className="cursor-pointer text-[10px] tracking-[0.2em]">
+              PROMPT SHOWN TO THE MODEL
+            </summary>
+            <pre className="mt-2 whitespace-pre-wrap rounded border border-line/50 bg-bg p-3 text-[10px]">
+              {result.prompt}
+            </pre>
+          </details>
+        </div>
+      )}
     </main>
   );
 }

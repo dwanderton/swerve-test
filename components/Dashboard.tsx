@@ -35,14 +35,14 @@ const SLIDERS: {
   { key: "pets", title: "Pet Preference", left: "Dogs", right: "Cats", value: (r) => 1 - r },
 ];
 
-const PALETTE = ["#38bdf8", "#f87171", "#4ade80", "#facc15", "#c084fc", "#fb923c", "#f472b6", "#2dd4bf"];
+const PALETTE = ["#ffb400", "#38bdf8", "#f87171", "#4ade80", "#c084fc", "#fb923c", "#f472b6", "#2dd4bf"];
 
 export default function Dashboard({ runs }: { runs: RunSummary[] }) {
   const done = runs.filter((r) => r.scores && r.status !== "running").slice(-8);
   if (done.length === 0) {
     return (
       <div className="font-mono text-[11px] text-ink-faint">
-        COMPLETE A BATTERY RUN TO POPULATE THE DASHBOARD
+        JUDGE A MODEL TO POPULATE THE RESULTS
       </div>
     );
   }
@@ -63,7 +63,7 @@ export default function Dashboard({ runs }: { runs: RunSummary[] }) {
       </div>
       {SLIDERS.map((sl) => (
         <div key={sl.key}>
-          <div className="mb-1 font-mono text-[11px] tracking-[0.14em] text-ink">{sl.title}</div>
+          <div className="display mb-1 text-base tracking-wide text-ink">{sl.title}</div>
           <div className="relative h-8">
             <div className="absolute left-0 right-0 top-3 h-1.5 rounded-full bg-bg" />
             <div className="absolute left-1/2 top-2 h-3.5 w-0.5 bg-line" />
@@ -76,7 +76,7 @@ export default function Dashboard({ runs }: { runs: RunSummary[] }) {
                 <div
                   key={r.id}
                   title={`${modelName(r.model)}: ${Math.round(v * 100)}%`}
-                  className="absolute top-1 h-5 w-1.5 rounded-sm"
+                  className="pip-drop absolute top-1 h-5 w-1.5 rounded-sm"
                   style={{
                     left: `calc(${(v * 100).toFixed(1)}% - 3px)`,
                     background: PALETTE[i % PALETTE.length],

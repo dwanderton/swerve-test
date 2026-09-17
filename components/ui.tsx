@@ -51,11 +51,11 @@ export function ModelSelect({
 }) {
   return (
     <label className="flex flex-col gap-1">
-      <span className="font-mono text-[10px] tracking-[0.22em] text-ink-faint">{label}</span>
+      <span className="text-[10px] tracking-[0.24em] text-ink-faint">{label}</span>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="rounded-md border border-line bg-bg px-2 py-1.5 font-mono text-[11px] text-ink outline-none"
+        className="rounded border border-line bg-bg px-2 py-1.5 text-[11px] text-ink outline-none focus:border-paint"
       >
         {MODELS.map((m) => (
           <option key={m.id} value={m.id}>
@@ -75,17 +75,17 @@ export function Btn({
 }: {
   onClick: () => void;
   children: React.ReactNode;
-  tone?: "normal" | "danger";
+  tone?: "normal" | "go";
   disabled?: boolean;
 }) {
   return (
     <button
       onClick={onClick}
       disabled={disabled}
-      className={`rounded-md border px-4 py-1.5 font-mono text-[11px] tracking-[0.22em] transition-colors disabled:opacity-40 ${
-        tone === "danger"
-          ? "border-primary/60 text-primary hover:bg-primary/15"
-          : "border-line text-ink-muted hover:text-ink"
+      className={`rounded px-4 py-2 text-[11px] tracking-[0.24em] transition-colors disabled:opacity-40 ${
+        tone === "go"
+          ? "bg-paint text-black hover:brightness-110"
+          : "border border-line text-ink-muted hover:border-ink-faint hover:text-ink"
       }`}
     >
       {children}
@@ -103,8 +103,8 @@ export function Panel({
   className?: string;
 }) {
   return (
-    <div className={`rounded-lg border border-line bg-surface/60 p-4 ${className}`}>
-      <div className="font-mono text-[10px] tracking-[0.28em] text-ink-faint">{title}</div>
+    <div className={`rounded-lg border border-line bg-surface/50 p-4 md:p-5 ${className}`}>
+      <div className="display text-sm tracking-wide text-ink-muted">{title}</div>
       <div className="mt-3">{children}</div>
     </div>
   );

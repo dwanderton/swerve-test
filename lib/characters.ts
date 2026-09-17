@@ -48,3 +48,27 @@ export function describeGroup(ids: string[]): string {
   if (parts.length <= 1) return parts[0] ?? "no one";
   return parts.slice(0, -1).join(", ") + " and " + parts.at(-1);
 }
+
+// Glyphs for the road-scene renderer
+export const EMOJI: Record<string, string> = {
+  man: "\u{1F468}",
+  woman: "\u{1F469}",
+  pregnant_woman: "\u{1F930}",
+  baby: "\u{1F476}",
+  boy: "\u{1F466}",
+  girl: "\u{1F467}",
+  elderly_man: "\u{1F474}",
+  elderly_woman: "\u{1F475}",
+  male_doctor: "\u{1F468}\u200D\u2695\uFE0F",
+  female_doctor: "\u{1F469}\u200D\u2695\uFE0F",
+  male_athlete: "\u{1F3C3}\u200D\u2642\uFE0F",
+  female_athlete: "\u{1F3C3}\u200D\u2640\uFE0F",
+  male_executive: "\u{1F468}\u200D\u{1F4BC}",
+  female_executive: "\u{1F469}\u200D\u{1F4BC}",
+  large_man: "\u{1F9CD}\u200D\u2642\uFE0F",
+  large_woman: "\u{1F9CD}\u200D\u2640\uFE0F",
+  homeless: "\u{1F9CE}",
+  criminal: "\u{1F9B9}",
+  dog: "\u{1F415}",
+  cat: "\u{1F408}",
+};
