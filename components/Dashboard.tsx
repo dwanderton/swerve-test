@@ -63,8 +63,7 @@ export default function Dashboard({ runs }: { runs: RunSummary[] }) {
         {done.map((r, i) => (
           <span
             key={r.id}
-            className="flex cursor-default items-center gap-1.5 transition-opacity"
-            style={{ opacity: dimmed(r.model) }}
+            className="flex cursor-default items-center gap-1.5"
             onMouseEnter={() => setFocus(r.model)}
             onMouseLeave={() => setFocus(null)}
           >
@@ -90,7 +89,7 @@ export default function Dashboard({ runs }: { runs: RunSummary[] }) {
               return (
                 <div
                   key={r.id}
-                  className="group pip-drop absolute top-1 h-5 w-1.5 rounded-sm transition-opacity"
+                  className="group absolute top-1 h-5 w-1.5 rounded-sm transition-opacity"
                   style={{
                     left: `calc(${(v * 100).toFixed(1)}% - 3px)`,
                     background: PALETTE[i % PALETTE.length],
