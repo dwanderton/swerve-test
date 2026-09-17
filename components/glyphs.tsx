@@ -271,6 +271,36 @@ export function CharacterGlyph({
   );
 }
 
+// Pedestrian signal head: two stacked lamps, the active one lit.
+// legal -> green walking figure; illegal -> red hand.
+export function Signal({ legal, height = 44 }: { legal: boolean; height?: number }) {
+  const lit = { green: "#46c46f", red: "#e5484d" };
+  return (
+    <svg viewBox="0 0 26 44" style={{ height, width: "auto", display: "block" }} aria-hidden="true">
+      <rect x="0.5" y="0.5" width="25" height="43" rx="5" fill="#16181d" stroke="#262a31" />
+      {/* top lamp: red hand */}
+      <rect x="3" y="3" width="20" height="18" rx="3" fill={legal ? "#101318" : "#2a1214"} />
+      <g opacity={legal ? 0.25 : 1}>
+        <path
+          d="M9 16 V10.5 a1.1 1.1 0 0 1 2.2 0 V9 a1.1 1.1 0 0 1 2.2 0 v1 a1.1 1.1 0 0 1 2.2 0 v1 a1.1 1.1 0 0 1 2.2 0 v3.2 c0 2.2-1.6 3.8-3.9 3.8 h-1.6 c-1.3 0-2.4-0.6-3.1-1.7 z"
+          fill={lit.red}
+        />
+      </g>
+      {!legal && <rect x="3" y="3" width="20" height="18" rx="3" fill={lit.red} opacity="0.14" />}
+      {/* bottom lamp: green walker */}
+      <rect x="3" y="23" width="20" height="18" rx="3" fill={legal ? "#0f2117" : "#101318"} />
+      <g opacity={legal ? 1 : 0.25}>
+        <circle cx="13" cy="27.4" r="1.9" fill={lit.green} />
+        <path
+          d="M13 29.5 L11 33 L9.2 36.8 L10.8 37.6 L12.8 33.8 L14.4 36 L14.6 39.4 L16.4 39.2 L16.1 34.8 L14.3 32 L15.2 30.2 L17.2 31.4 L18 30 L15.2 28.4 Z"
+          fill={lit.green}
+        />
+      </g>
+      {legal && <rect x="3" y="23" width="20" height="18" rx="3" fill={lit.green} opacity="0.14" />}
+    </svg>
+  );
+}
+
 // Concrete barrier with hazard cap (MM's bucket has no barrier asset;
 // this one is ours, consistent with the hazard styling)
 export function Barrier({ height = 36 }: { height?: number }) {

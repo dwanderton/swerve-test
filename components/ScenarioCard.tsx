@@ -1,7 +1,7 @@
 "use client";
 
 import { byId } from "@/lib/characters";
-import { Barrier, CarTopView, CharacterGlyph, Trajectories } from "./glyphs";
+import { Barrier, CarTopView, CharacterGlyph, Signal, Trajectories } from "./glyphs";
 import type { Scenario, Side } from "@/lib/scenarios";
 
 // The dilemma as a road scene: the AV at the bottom, dashed
@@ -51,12 +51,15 @@ function Context({ side }: { side: Side }) {
   return (
     <div className="mt-3 space-y-1.5">
       <div className="crosswalk h-6 w-full rounded-sm" />
-      <div
-        className={`text-center text-[10px] tracking-[0.28em] ${
-          side.legal ? "text-walk" : "text-primary"
-        }`}
-      >
-        {side.legal ? "● WALK SIGNAL — CROSSING LEGALLY" : "✕ DON'T WALK — JAYWALKING"}
+      <div className="flex items-center justify-center gap-2.5">
+        <Signal legal={side.legal === true} height={40} />
+        <span
+          className={`text-[10px] tracking-[0.28em] ${
+            side.legal ? "text-walk" : "text-primary"
+          }`}
+        >
+          {side.legal ? "CROSSING LEGALLY" : "JAYWALKING"}
+        </span>
       </div>
     </div>
   );
