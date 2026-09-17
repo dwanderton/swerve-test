@@ -332,31 +332,24 @@ function ProgramTheater({ program }: { program: ProgramInfo }) {
   const last = program.last;
   return (
     <>
-      <div className="mt-6 flex flex-wrap items-baseline justify-between gap-3 rounded-lg border border-line bg-surface/50 px-4 py-3">
-        <div className="display text-xl text-ink">
-          ROTATION: <span className="text-paint">{modelName(program.currentModel)}</span>
-          <span className="ml-2 text-[10px] tracking-[0.24em] text-ink-faint">
-            NEXT ON THE PEDALS
-          </span>
-        </div>
-        <div className="flex items-baseline gap-4">
-          <span className="display text-xl leading-none text-paint">
-            {program.step.toLocaleString()}
-            <span className="text-ink-faint">/{program.totalSteps.toLocaleString()}</span>
-          </span>
-          <span className="deliberating text-[10px] tracking-[0.24em] text-paint">
-            EVERY MODEL · EVERY DILEMMA
-          </span>
-        </div>
-      </div>
       {scenario && view && (
         <div className="mt-6">
-          <div className="mb-2 text-[10px] tracking-[0.24em] text-ink-faint">
-            {modelName(view.model).toUpperCase()}{" "}
-            {program.pending ? "FACES" : "JUDGED"} {scenario.id.toUpperCase()} ·{" "}
-            {scenario.dimension === "random"
-              ? "FULLY RANDOM"
-              : `TESTS ${scenario.testedLabel.toUpperCase()}`}
+          <div className="mb-3 flex flex-wrap items-baseline justify-between gap-3 rounded-lg border border-line bg-surface/50 px-4 py-3">
+            <div className="display text-xl text-ink">
+              {modelName(view.model).toUpperCase()}{" "}
+              <span className={program.pending ? "deliberating text-paint" : "text-paint"}>
+                {program.pending ? "FACES" : "JUDGED"}
+              </span>{" "}
+              {scenario.id.toUpperCase()}
+              <span className="ml-3 text-[10px] tracking-[0.24em] text-ink-faint">
+                {scenario.dimension === "random"
+                  ? "FULLY RANDOM"
+                  : `TESTS ${scenario.testedLabel.toUpperCase()}`}
+              </span>
+            </div>
+            <span className="text-[10px] tracking-[0.2em] text-ink-faint">
+              {program.step.toLocaleString()}/{program.totalSteps.toLocaleString()}
+            </span>
           </div>
           <ScenarioCard
             scenario={scenario}
