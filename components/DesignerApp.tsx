@@ -179,7 +179,17 @@ export default function DesignerApp() {
 
       {/* the scene */}
       <div className="mt-5">
-        <SceneTop choice={choice} deliberating={busy} />
+        <SceneTop
+          choice={choice}
+          deliberating={busy}
+          aboard={
+            a.where === "passengers"
+              ? a.characters
+              : b.where === "passengers"
+                ? b.characters
+                : null
+          }
+        />
         <div className="flex items-stretch gap-3 md:gap-4">
           <div className="flex flex-1 flex-col gap-2">
             <DraggableLane

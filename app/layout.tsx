@@ -40,6 +40,9 @@ export default function RootLayout({
             <Link href="/designer" className="hover:text-paint">
               DESIGN
             </Link>
+            <Link href="/results" className="hover:text-paint">
+              RESULTS
+            </Link>
             <About />
             <a
               href="https://www.moralmachine.net"

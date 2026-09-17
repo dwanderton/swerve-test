@@ -1,14 +1,16 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Btn, ModelSelect, Panel, usePoll } from "./ui";
+import { Panel, usePoll } from "./ui";
 import { modelName } from "@/lib/models";
 import type { DimensionScore, MoralRun } from "@/lib/moral";
-import Dashboard from "./Dashboard";
 import ScenarioCard from "./ScenarioCard";
 import { SESSION_SIZE, buildBattery } from "@/lib/scenarios";
 import { CharacterGlyph } from "./glyphs";
 import { byId } from "@/lib/characters";
+
+// The home page is a live theater: no controls, just what the model
+// on trial is deciding right now. Runs are started via the API.
 
 type Summary = {
   id: string;
@@ -29,29 +31,26 @@ type HomeSummary = {
   mostKilled: string | null;
 };
 
-const SEED = 1; // fixed: every model faces the identical dilemma sequence
+const VERDICT_HOLD_MS = 5_000;
+const FADE_MS = 450;
 
 export default function JudgeApp() {
-  const { data, act } = usePoll<{
+  const { data } = usePoll<{
     run: MoralRun | null;
     summary?: HomeSummary;
     runs: Summary[];
   }>("/api/moral");
-  const [model, setModel] = useState("anthropic/claude-haiku-4.5");
-  const [sessions, setSessions] = useState(20);
   const run = data?.run ?? null;
   const total = run ? run.sessions * SESSION_SIZE : 0;
 
-  // The battery is deterministic, so the client reconstructs the exact
-  // dilemma the model is judging right now
   const battery = useMemo(
     () => (run ? buildBattery(run.seed, run.sessions) : null),
     [run?.seed, run?.sessions],
   );
   const judging = run?.status === "running";
 
-  // Verdict choreography: stamp lands on the answered dilemma, holds,
-  // the cards fade out, the next dilemma fades in
+  // Choreography: the stamp lands in place (no remount, no flash),
+  // holds five seconds, the scene fades, the next dilemma fades in
   const answersLen = run?.answers.length ?? 0;
   const runId = run?.id ?? null;
   const [view, setView] = useState({ idx: 0, verdict: false, out: false });
@@ -63,10 +62,13 @@ export default function JudgeApp() {
     const last = answersLen - 1;
     setView({ idx: last, verdict: true, out: false });
     if (run.status === "running" && answersLen < total) {
-      const t1 = setTimeout(() => setView({ idx: last, verdict: true, out: true }), 1_700);
+      const t1 = setTimeout(
+        () => setView({ idx: last, verdict: true, out: true }),
+        VERDICT_HOLD_MS,
+      );
       const t2 = setTimeout(
         () => setView({ idx: answersLen, verdict: false, out: false }),
-        2_150,
+        VERDICT_HOLD_MS + FADE_MS,
       );
       return () => {
         clearTimeout(t1);
@@ -100,8 +102,8 @@ export default function JudgeApp() {
           WHO DOES THE <span className="text-paint">MODEL</span> CHOOSE?
         </h1>
         <p className="mt-2 text-[11px] tracking-[0.2em] text-ink-faint">
-          BRAKE FAILURE. TWO OUTCOMES. THE MODEL MUST PICK ONE — {SESSION_SIZE} DILEMMAS PER
-          SESSION, ENUM-FORCED JSON, EVERY VERDICT LOGGED.
+          LIVE — YOU ARE WATCHING AN AI DECIDE, DILEMMA BY DILEMMA. BRAKE FAILURE, TWO
+          OUTCOMES, ENUM-FORCED JSON, EVERY VERDICT LOGGED.
         </p>
       </div>
 
@@ -114,108 +116,65 @@ export default function JudgeApp() {
         </div>
       )}
 
-      <div className="mt-6 flex flex-wrap items-end gap-3 rounded-lg border border-line bg-surface/50 p-4">
-        <ModelSelect value={model} onChange={setModel} label="MODEL ON TRIAL" />
-        <label className="flex flex-col gap-1">
-          <span className="text-[10px] tracking-[0.24em] text-ink-faint">DILEMMAS</span>
-          <select
-            value={sessions}
-            onChange={(e) => setSessions(Number(e.target.value))}
-            className="rounded border border-line bg-bg px-2 py-1.5 text-[11px] text-ink outline-none focus:border-paint"
-          >
-            {[10, 20, 50, 100, 200].map((s) => (
-              <option key={s} value={s}>
-                {s * SESSION_SIZE}
-              </option>
-            ))}
-          </select>
-        </label>
-        <Btn
-          tone="go"
-          disabled={judging}
-          onClick={() => act({ action: "start", model, seed: SEED, sessions })}
-        >
-          JUDGE
-        </Btn>
-        {judging && <Btn onClick={() => act({ action: "stop" })}>STOP</Btn>}
-        {run && (
-          <div className="ml-auto text-right">
-            <div className="display text-2xl leading-none text-paint">
-              {String(judging ? run.index : run.answers.length).padStart(3, "0")}
-              <span className="text-ink-faint">/{String(total).padStart(3, "0")}</span>
+      {run ? (
+        <>
+          <div className="mt-6 flex flex-wrap items-baseline justify-between gap-3 rounded-lg border border-line bg-surface/50 px-4 py-3">
+            <div className="display text-xl text-ink">
+              ON TRIAL: <span className="text-paint">{modelName(run.model)}</span>
             </div>
-            <div className="text-[10px] tracking-[0.24em] text-ink-faint">
-              {modelName(run.model)} ·{" "}
-              {judging ? (
-                <span className="deliberating text-paint">DELIBERATING</span>
-              ) : (
-                run.status.toUpperCase()
-              )}
+            <div className="flex items-baseline gap-4">
+              <span className="display text-xl leading-none text-paint">
+                {String(judging ? run.index : run.answers.length).padStart(3, "0")}
+                <span className="text-ink-faint">/{String(total).padStart(3, "0")}</span>
+              </span>
+              <span className="text-[10px] tracking-[0.24em] text-ink-faint">
+                {judging ? (
+                  <span className="deliberating text-paint">DELIBERATING</span>
+                ) : (
+                  run.status.toUpperCase()
+                )}
+              </span>
             </div>
           </div>
-        )}
-      </div>
 
-      {hero && (
-        <div className="mt-6">
-          <div className="mb-2 flex items-baseline justify-between text-[10px] tracking-[0.24em] text-ink-faint">
-            <span>
-              DILEMMA {hero.id.toUpperCase()} ·{" "}
-              {hero.dimension === "random"
-                ? "FULLY RANDOM"
-                : `TESTS ${hero.testedLabel.toUpperCase()}`}
-            </span>
-          </div>
-          <div key={`${heroIndex}-${view.verdict}`} className={view.out ? "card-out" : "card-in"}>
-            <ScenarioCard
-              scenario={hero}
-              choice={heroAnswer && heroAnswer.choice !== "ERROR" ? heroAnswer.choice : null}
-              deliberating={judging && !view.verdict}
-            />
-            {heroAnswer?.reason && (
-              <div className="mt-3 rounded border-l-4 border-paint bg-surface/60 px-4 py-2 text-[12px] italic text-ink">
-                “{heroAnswer.reason}”
+          {hero && (
+            <div className="mt-6">
+              <div className="mb-2 text-[10px] tracking-[0.24em] text-ink-faint">
+                DILEMMA {hero.id.toUpperCase()} ·{" "}
+                {hero.dimension === "random"
+                  ? "FULLY RANDOM"
+                  : `TESTS ${hero.testedLabel.toUpperCase()}`}
               </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {run && run.answers.length > 0 && (
-        <div className="mt-5 space-y-1 text-[11px]">
-          {run.answers
-            .slice(-6)
-            .reverse()
-            .map((a, i) => (
-              <div key={`${a.scenarioId}-${i}`} className="flex gap-3 text-ink-faint">
-                <span className="w-28 shrink-0 text-ink-muted">{a.scenarioId}</span>
-                <span className={a.choice === "ERROR" ? "shrink-0 text-paint" : "shrink-0 text-primary"}>
-                  {a.choice === "ERROR" ? "COMMS ERROR" : `KILLED ${a.choice}`}
-                </span>
-                <span className="truncate italic">“{a.reason}”</span>
+              <div key={heroIndex} className={view.out ? "card-out" : "card-in"}>
+                <ScenarioCard
+                  scenario={hero}
+                  choice={
+                    heroAnswer && heroAnswer.choice !== "ERROR" ? heroAnswer.choice : null
+                  }
+                  deliberating={judging && !view.verdict}
+                />
+                <div className="mt-3 min-h-[2.4rem]">
+                  {heroAnswer?.reason && (
+                    <div className="rounded border-l-4 border-paint bg-surface/60 px-4 py-2 text-[12px] italic text-ink">
+                      “{heroAnswer.reason}”
+                    </div>
+                  )}
+                </div>
               </div>
-            ))}
-        </div>
-      )}
-
-      <div className="mt-8">
-        <div className="mb-2 flex justify-end">
-          <a
-            href="/api/moral/export"
-            download="swerve-results.jsonl"
-            className="rounded border border-line px-3 py-1.5 text-[10px] tracking-[0.24em] text-ink-muted hover:border-ink-faint hover:text-ink"
-          >
-            ⬇ DOWNLOAD FULL RESULTS (JSONL)
-          </a>
-        </div>
-        <Panel title="RESULTS — WHERE EACH MODEL LIES">
-          <Dashboard runs={data?.runs ?? []} />
+            </div>
+          )}
+        </>
+      ) : (
+        <Panel title="STANDBY" className="mt-6">
+          <div className="text-[11px] tracking-[0.2em] text-ink-faint">
+            NO MODEL ON TRIAL RIGHT NOW. THE NEXT RUN WILL APPEAR HERE THE MOMENT IT
+            BEGINS.
+          </div>
         </Panel>
-      </div>
+      )}
     </main>
   );
 }
-
 
 function CharTile({
   label,
@@ -240,7 +199,6 @@ function CharTile({
     </div>
   );
 }
-
 
 function PetTile({
   label,

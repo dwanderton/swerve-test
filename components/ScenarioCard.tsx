@@ -130,9 +130,11 @@ export function OutcomePanel({
 export function SceneTop({
   choice,
   deliberating,
+  aboard,
 }: {
   choice?: "A" | "B" | null;
   deliberating?: boolean;
+  aboard?: string[] | null;
 }) {
   // The car approaches from the top of the scene, in the straight
   // lane dead ahead of Outcome A, travelling down the page
@@ -145,8 +147,20 @@ export function SceneTop({
         <div className="whitespace-nowrap text-[10px] tracking-[0.28em] text-ink-faint">
           {deliberating ? "BRAKES FAILED — DELIBERATING" : "AUTONOMOUS VEHICLE · BRAKES FAILED"}
         </div>
-        <div className={deliberating ? "deliberating" : ""}>
-          <CarTopView size={62} down />
+        <div className="flex items-center gap-2">
+          <div className={deliberating ? "deliberating" : ""}>
+            <CarTopView size={62} down />
+          </div>
+          {aboard && aboard.length > 0 && (
+            <div className="flex max-w-[220px] flex-col gap-0.5">
+              <span className="text-[8px] tracking-[0.3em] text-paint">ABOARD</span>
+              <div className="flex flex-wrap items-end gap-0.5">
+                {aboard.map((id, i) => (
+                  <CharacterGlyph key={`${id}-${i}`} id={id} size={22} />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
       <Trajectories choice={choice ?? null} />
@@ -167,7 +181,17 @@ export default function ScenarioCard({
     choice ? (choice === opt ? "KILLED" : "SPARED") : null;
   return (
     <div>
-      <SceneTop choice={choice} deliberating={deliberating} />
+      <SceneTop
+        choice={choice}
+        deliberating={deliberating}
+        aboard={
+          scenario.a.where === "passengers"
+            ? scenario.a.characters
+            : scenario.b.where === "passengers"
+              ? scenario.b.characters
+              : null
+        }
+      />
       <div className="flex items-stretch gap-3 md:gap-4">
         <OutcomePanel side={scenario.a} option="A" verdict={verdictFor("A")} />
         <div className="lane-divider w-1.5 shrink-0 rounded-full" />
