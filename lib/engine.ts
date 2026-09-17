@@ -2,6 +2,29 @@ import fs from "node:fs";
 import path from "node:path";
 import { generateObject, jsonSchema } from "ai";
 
+// Storage backends: Upstash Redis in production (shared store with
+// the petrov-test project, swerve:* key prefix), plain files in dev.
+const useRedis =
+  !!process.env.KV_REST_API_URL &&
+  (process.env.NODE_ENV === "production" || process.env.USE_REDIS === "1");
+
+import type { Redis } from "@upstash/redis";
+let redisClient: Redis | null = null;
+async function redis(): Promise<Redis> {
+  if (!redisClient) {
+    const { Redis } = await import("@upstash/redis");
+    redisClient = new Redis({
+      url: process.env.KV_REST_API_URL!,
+      token: process.env.KV_REST_API_TOKEN!,
+    });
+  }
+  return redisClient;
+}
+
+const stateKey = (exp: string) => `swerve:${exp}:state`;
+const runsKey = (exp: string) => `swerve:${exp}:runs`;
+const lockKey = (exp: string) => `swerve:${exp}:lock`;
+
 const DATA_DIR = path.join(process.cwd(), "data");
 
 function dir(exp: string) {
@@ -10,7 +33,11 @@ function dir(exp: string) {
   return d;
 }
 
-export function readState<T>(exp: string): T | null {
+export async function readState<T>(exp: string): Promise<T | null> {
+  if (useRedis) {
+    const r = await redis();
+    return (await r.get<T>(stateKey(exp))) ?? null;
+  }
   const f = path.join(dir(exp), "state.json");
   if (!fs.existsSync(f)) return null;
   try {
@@ -20,15 +47,30 @@ export function readState<T>(exp: string): T | null {
   }
 }
 
-export function writeState(exp: string, state: unknown) {
+export async function writeState(exp: string, state: unknown): Promise<void> {
+  if (useRedis) {
+    const r = await redis();
+    await r.set(stateKey(exp), state);
+    return;
+  }
   fs.writeFileSync(path.join(dir(exp), "state.json"), JSON.stringify(state), "utf8");
 }
 
-export function appendRun(exp: string, run: unknown) {
+export async function appendRun(exp: string, run: unknown): Promise<void> {
+  if (useRedis) {
+    const r = await redis();
+    await r.rpush(runsKey(exp), JSON.stringify(run));
+    return;
+  }
   fs.appendFileSync(path.join(dir(exp), "runs.jsonl"), JSON.stringify(run) + "\n", "utf8");
 }
 
-export function readRuns<T>(exp: string, last = 50): T[] {
+export async function readRuns<T>(exp: string, last = 50): Promise<T[]> {
+  if (useRedis) {
+    const r = await redis();
+    const raw = await r.lrange<T | string>(runsKey(exp), -last, -1);
+    return raw.map((v) => (typeof v === "string" ? (JSON.parse(v) as T) : v));
+  }
   const f = path.join(dir(exp), "runs.jsonl");
   if (!fs.existsSync(f)) return [];
   const runs: T[] = [];
@@ -79,13 +121,28 @@ export async function askObject<T>(
   }
 }
 
-// One in-flight step per experiment per server process
+// One in-flight step per experiment. In-memory flag for dev; a Redis
+// NX lock in production so concurrent serverless instances can't
+// double-step a run.
 const busy = new Map<string, boolean>();
 
 export function tryStep(exp: string, step: () => Promise<void>) {
   if (busy.get(exp)) return;
   busy.set(exp, true);
-  void step()
+  void (async () => {
+    if (useRedis) {
+      const r = await redis();
+      const claimed = await r.set(lockKey(exp), "1", { nx: true, px: 50_000 });
+      if (claimed === null) return;
+      try {
+        await step();
+      } finally {
+        await r.del(lockKey(exp)).catch(() => {});
+      }
+    } else {
+      await step();
+    }
+  })()
     .catch(() => {})
     .finally(() => busy.set(exp, false));
 }

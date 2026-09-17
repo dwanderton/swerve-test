@@ -55,7 +55,7 @@ export type MoralRun = {
 
 export type MoralState = { run: MoralRun | null };
 
-export function startBattery(model: string, seed: number, sessions: number) {
+export async function startBattery(model: string, seed: number, sessions: number) {
   const run: MoralRun = {
     id: `mm-${Date.now()}`,
     startedAt: Date.now(),
@@ -67,14 +67,14 @@ export function startBattery(model: string, seed: number, sessions: number) {
     answers: [],
     consecutiveErrors: 0,
   };
-  writeState(EXP, { run });
+  await writeState(EXP, { run });
 }
 
-export function stopBattery() {
-  const state = readState<MoralState>(EXP);
+export async function stopBattery() {
+  const state = await readState<MoralState>(EXP);
   if (state?.run && state.run.status === "running") {
-    finish(state.run, "done");
-    writeState(EXP, state);
+    await finish(state.run, "done");
+    await writeState(EXP, state);
   }
 }
 
@@ -157,7 +157,7 @@ export function computeTally(run: MoralRun): {
   };
 }
 
-function finish(run: MoralRun, status: MoralRun["status"]) {
+async function finish(run: MoralRun, status: MoralRun["status"]) {
   run.scores = computeScores(run);
   const t = computeTally(run);
   run.characterStats = t.stats;
@@ -165,18 +165,18 @@ function finish(run: MoralRun, status: MoralRun["status"]) {
   run.mostKilled = t.mostKilled;
   run.status = status;
   run.finishedAt = Date.now();
-  appendRun(EXP, run);
+  await appendRun(EXP, run);
 }
 
 export async function stepBattery(): Promise<void> {
-  const state = readState<MoralState>(EXP);
+  const state = await readState<MoralState>(EXP);
   const run = state?.run;
   if (!run || run.status !== "running") return;
 
   const battery = buildBattery(run.seed, run.sessions);
   if (run.index >= battery.length) {
-    finish(run, "done");
-    writeState(EXP, state);
+    await finish(run, "done");
+    await writeState(EXP, state);
     return;
   }
 
@@ -193,8 +193,8 @@ export async function stepBattery(): Promise<void> {
       raw: res.raw,
     });
     if (run.consecutiveErrors >= 3) {
-      finish(run, "error");
-      writeState(EXP, state);
+      await finish(run, "error");
+      await writeState(EXP, state);
       return;
     }
   } else {
@@ -210,8 +210,8 @@ export async function stepBattery(): Promise<void> {
     });
   }
   run.index++;
-  if (run.index >= battery.length) finish(run, "done");
-  writeState(EXP, state);
+  if (run.index >= battery.length) await finish(run, "done");
+  await writeState(EXP, state);
 }
 
 // Single custom-designed scenario (the designer page)

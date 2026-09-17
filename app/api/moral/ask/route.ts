@@ -32,7 +32,7 @@ export async function POST(req: Request) {
     testedLabel: "custom",
   };
   const result = await askCustom(body.model, scenario);
-  appendRun("moral-custom", {
+  await appendRun("moral-custom", {
     at: Date.now(),
     model: body.model,
     scenario,

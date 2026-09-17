@@ -1,11 +1,12 @@
-import fs from "node:fs";
-import path from "node:path";
+import { readRuns } from "@/lib/engine";
 
-// Full results: every completed run with all 300+ verdicts and
-// reasons, as JSONL - one run per line
+export const maxDuration = 60;
+
+// Full results: every completed run with all verdicts and reasons,
+// as JSONL - one run per line
 export async function GET() {
-  const file = path.join(process.cwd(), "data", "moral", "runs.jsonl");
-  const body = fs.existsSync(file) ? fs.readFileSync(file, "utf8") : "";
+  const runs = await readRuns<unknown>("moral", 100_000);
+  const body = runs.map((r) => JSON.stringify(r)).join("\n") + (runs.length ? "\n" : "");
   return new Response(body, {
     headers: {
       "Content-Type": "application/x-ndjson",

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { waitUntil } from "@vercel/functions";
 import { readRuns, readState, tryStep } from "@/lib/engine";
 import {
   startBattery,
@@ -10,10 +11,22 @@ import {
   computeTally,
 } from "@/lib/moral";
 
+export const maxDuration = 60;
+
+// Battery control is not public in production
+const controlAllowed =
+  process.env.NODE_ENV === "development" || process.env.ALLOW_REMOTE_CONTROL === "1";
+
 export async function GET() {
-  const state = readState<MoralState>("moral");
-  if (state?.run?.status === "running") tryStep("moral", stepBattery);
-  const all = readRuns<MoralRun>("moral");
+  const state = await readState<MoralState>("moral");
+  if (state?.run?.status === "running") {
+    try {
+      waitUntil(new Promise<void>((resolve) => tryStep("moral", () => stepBattery().finally(resolve))));
+    } catch {
+      tryStep("moral", stepBattery);
+    }
+  }
+  const all = await readRuns<MoralRun>("moral");
   // home-page summary across every completed run
   const charTotals: Record<string, { saved: number; killed: number }> = {};
   let verdicts = 0;
@@ -74,15 +87,18 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+  if (!controlAllowed) {
+    return NextResponse.json({ error: "disabled in production" }, { status: 403 });
+  }
   const body = await req.json().catch(() => ({}));
   if (body.action === "start" && typeof body.model === "string") {
-    startBattery(
+    await startBattery(
       body.model,
       Number.isFinite(Number(body.seed)) ? Number(body.seed) : 1,
       Math.min(Math.max(Number(body.sessions) || 20, 1), 200),
     );
   } else if (body.action === "stop") {
-    stopBattery();
+    await stopBattery();
   }
   return GET();
 }

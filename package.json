@@ -9,6 +9,8 @@
   },
   "dependencies": {
     "@material-design-icons/svg": "^0.14.15",
+    "@upstash/redis": "^1.38.4",
+    "@vercel/functions": "^3.9.8",
     "ai": "^7.0.102",
     "next": "^16.3.5",
     "react": "^19.3.0",
