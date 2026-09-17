@@ -120,8 +120,6 @@ export default function JudgeApp() {
     if (!judging) return;
     if (view.verdict && heroAnswer && heroAnswer.choice !== "ERROR") {
       audio.verdict(heroAnswer.choice);
-    } else if (!view.verdict) {
-      audio.approach();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [heroIndex, view.verdict, judging]);
@@ -311,8 +309,8 @@ function SkeletonTile({ label }: { label: string }) {
 function ProgramTheater({ program }: { program: ProgramInfo }) {
   const phase = program.pending ? `p${program.step}` : `v${program.step}`;
   useEffect(() => {
-    if (program.pending) audio.approach();
-    else if (program.last && program.last.choice !== "ERROR") audio.verdict(program.last.choice);
+    if (!program.pending && program.last && program.last.choice !== "ERROR")
+      audio.verdict(program.last.choice);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase]);
 
