@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+
 import { modelName } from "@/lib/models";
 import { CharacterGlyph } from "./glyphs";
 import { byId } from "@/lib/characters";
@@ -39,6 +41,9 @@ const SLIDERS: {
 const PALETTE = ["#ffb400", "#38bdf8", "#f87171", "#4ade80", "#c084fc", "#fb923c", "#f472b6", "#2dd4bf"];
 
 export default function Dashboard({ runs }: { runs: RunSummary[] }) {
+  // hovering a model anywhere spotlights it across every slider
+  const [focus, setFocus] = useState<string | null>(null);
+  const dimmed = (model: string) => (focus !== null && model !== focus ? 0.12 : 1);
   const done = runs.filter((r) => r.scores).slice(-16);
   if (done.length === 0) {
     return (
@@ -56,7 +61,13 @@ export default function Dashboard({ runs }: { runs: RunSummary[] }) {
     <div className="space-y-5">
       <div className="flex flex-wrap gap-4 font-mono text-[11px]">
         {done.map((r, i) => (
-          <span key={r.id} className="flex items-center gap-1.5">
+          <span
+            key={r.id}
+            className="flex cursor-default items-center gap-1.5 transition-opacity"
+            style={{ opacity: dimmed(r.model) }}
+            onMouseEnter={() => setFocus(r.model)}
+            onMouseLeave={() => setFocus(null)}
+          >
             <span className="h-2.5 w-2.5 rounded-full" style={{ background: PALETTE[i % PALETTE.length] }} />
             <span className="text-ink-muted">
               {modelName(r.model)}
@@ -79,11 +90,15 @@ export default function Dashboard({ runs }: { runs: RunSummary[] }) {
               return (
                 <div
                   key={r.id}
-                  className="group pip-drop absolute top-1 h-5 w-1.5 rounded-sm"
+                  className="group pip-drop absolute top-1 h-5 w-1.5 rounded-sm transition-opacity"
                   style={{
                     left: `calc(${(v * 100).toFixed(1)}% - 3px)`,
                     background: PALETTE[i % PALETTE.length],
+                    opacity: dimmed(r.model),
+                    zIndex: focus === r.model ? 5 : 1,
                   }}
+                  onMouseEnter={() => setFocus(r.model)}
+                  onMouseLeave={() => setFocus(null)}
                 >
                   <div className="pointer-events-none absolute -top-8 left-1/2 z-10 -translate-x-1/2 whitespace-nowrap rounded border border-line bg-bg px-2 py-1 text-[10px] text-ink opacity-0 transition-opacity group-hover:opacity-100">
                     {modelName(r.model)} · {Math.round(v * 100)}%
