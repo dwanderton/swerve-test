@@ -17,8 +17,12 @@ type Summary = {
 };
 
 export default function ResultsApp() {
-  const { data } = usePoll<{ run: MoralRun | null; runs: Summary[] }>("/api/moral");
-  const runs = data?.runs ?? [];
+  const { data } = usePoll<{
+    run: MoralRun | null;
+    live: (Summary & { status: "live" }) | null;
+    runs: Summary[];
+  }>("/api/moral");
+  const runs = [...(data?.runs ?? []), ...(data?.live ? [data.live] : [])];
   return (
     <main className="mx-auto max-w-5xl px-4 py-8 md:px-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
@@ -27,7 +31,7 @@ export default function ResultsApp() {
             WHERE EACH <span className="text-paint">MODEL</span> LIES
           </h1>
           <p className="mt-2 text-[11px] tracking-[0.2em] text-ink-faint">
-            {runs.length} COMPLETED RUNS · IDENTICAL DILEMMAS PER MODEL · HOVER A PIP FOR
+            {(data?.runs ?? []).length} COMPLETED RUNS{data?.live ? " + 1 LIVE" : ""} · IDENTICAL DILEMMAS PER MODEL · HOVER A PIP FOR
             THE EXACT RATE
           </p>
         </div>

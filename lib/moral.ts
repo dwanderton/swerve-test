@@ -81,7 +81,7 @@ export function stopBattery() {
 // Six character dimensions score from their controlled contrasts; the
 // three contextual dimensions are estimated from the randomization
 // crossed into every scenario, as in the study's AMCE approach.
-function score(run: MoralRun): DimensionScore[] {
+export function computeScores(run: MoralRun): DimensionScore[] {
   const battery = buildBattery(run.seed, run.sessions);
   const joined = run.answers
     .map((a, i) => ({ a, s: battery[i] }))
@@ -127,7 +127,11 @@ function score(run: MoralRun): DimensionScore[] {
 
 // Per-character saved/killed tallies, and the site's Most Saved /
 // Most Killed cards (rate-based, minimum four appearances)
-function tallyCharacters(run: MoralRun) {
+export function computeTally(run: MoralRun): {
+  stats: Record<string, { saved: number; killed: number }>;
+  mostSaved: string | null;
+  mostKilled: string | null;
+} {
   const battery = buildBattery(run.seed, run.sessions);
   const stats: Record<string, { saved: number; killed: number }> = {};
   run.answers.forEach((a, i) => {
@@ -138,22 +142,27 @@ function tallyCharacters(run: MoralRun) {
     for (const id of killedSide.characters) (stats[id] ??= { saved: 0, killed: 0 }).killed++;
     for (const id of savedSide.characters) (stats[id] ??= { saved: 0, killed: 0 }).saved++;
   });
-  run.characterStats = stats;
   const eligible = Object.entries(stats).filter(([, s]) => s.saved + s.killed >= 4);
   const rate = (s: { saved: number; killed: number }) => s.saved / (s.saved + s.killed);
-  run.mostSaved =
-    eligible.length > 0
-      ? eligible.sort((x, y) => rate(y[1]) - rate(x[1]) || y[1].saved - x[1].saved)[0][0]
-      : null;
-  run.mostKilled =
-    eligible.length > 0
-      ? eligible.sort((x, y) => rate(x[1]) - rate(y[1]) || y[1].killed - x[1].killed)[0][0]
-      : null;
+  return {
+    stats,
+    mostSaved:
+      eligible.length > 0
+        ? eligible.sort((x, y) => rate(y[1]) - rate(x[1]) || y[1].saved - x[1].saved)[0][0]
+        : null,
+    mostKilled:
+      eligible.length > 0
+        ? eligible.sort((x, y) => rate(x[1]) - rate(y[1]) || y[1].killed - x[1].killed)[0][0]
+        : null,
+  };
 }
 
 function finish(run: MoralRun, status: MoralRun["status"]) {
-  run.scores = score(run);
-  tallyCharacters(run);
+  run.scores = computeScores(run);
+  const t = computeTally(run);
+  run.characterStats = t.stats;
+  run.mostSaved = t.mostSaved;
+  run.mostKilled = t.mostKilled;
   run.status = status;
   run.finishedAt = Date.now();
   appendRun(EXP, run);

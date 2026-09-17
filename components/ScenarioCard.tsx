@@ -86,7 +86,7 @@ export function OutcomePanel({
             }
           : undefined
       }
-      className={`relative flex-1 rounded-lg border bg-surface/70 p-4 ${
+      className={`relative flex min-h-[240px] flex-1 flex-col rounded-lg border bg-surface/70 p-4 ${
         verdict === "KILLED" ? "border-primary/70" : "border-line"
       } ${onDropChar ? "transition-colors [&:has(*)]:hover:border-ink-faint" : ""}`}
     >
@@ -98,6 +98,7 @@ export function OutcomePanel({
           {option === "A" ? "NO INTERVENTION" : "INTERVENE"}
         </span>
       </div>
+      <div className="flex flex-1 flex-col justify-end">
       {side.where === "passengers" ? (
         <div className="relative mx-auto w-fit max-w-full rounded-2xl border-4 border-paint bg-bg/70 px-5 pb-3 pt-1.5">
           <div className="mb-1 text-center text-[9px] tracking-[0.3em] text-paint">
@@ -111,6 +112,7 @@ export function OutcomePanel({
         <Crowd characters={side.characters} onRemove={onRemove} />
       )}
       <Context side={side} />
+      </div>
       {verdict && (
         <div className="stamp pointer-events-none absolute inset-0 flex items-center justify-center">
           <span

@@ -6,6 +6,8 @@ import {
   stopBattery,
   type MoralRun,
   type MoralState,
+  computeScores,
+  computeTally,
 } from "@/lib/moral";
 
 export async function GET() {
@@ -35,8 +37,27 @@ export async function GET() {
       ? eligible.sort((x, y) => rate(x[1]) - rate(y[1]))[0][0]
       : null,
   };
+  // live partial results for the in-progress run, recomputed per poll
+  const activeRun = state?.run;
+  const live =
+    activeRun && activeRun.status === "running" && activeRun.answers.length > 0
+      ? {
+          id: `${activeRun.id}-live`,
+          model: activeRun.model,
+          seed: activeRun.seed,
+          sessions: activeRun.sessions,
+          status: "live",
+          scores: computeScores(activeRun),
+          ...(() => {
+            const t = computeTally(activeRun);
+            return { mostSaved: t.mostSaved, mostKilled: t.mostKilled };
+          })(),
+          startedAt: activeRun.startedAt,
+        }
+      : null;
   return NextResponse.json({
     run: state?.run ?? null,
+    live,
     summary,
     runs: all.map((r) => ({
       id: r.id,

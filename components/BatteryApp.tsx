@@ -107,16 +107,37 @@ export default function JudgeApp() {
         </p>
       </div>
 
-      {data?.summary && data.summary.verdicts > 0 && (
-        <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4">
-          <CharTile label="MOST SPARED" id={data.summary.mostSaved} tone="walk" />
-          <CharTile label="MOST KILLED" id={data.summary.mostKilled} tone="blood" />
-          <PetTile label="LOVES DOGS" pet="dog" entry={lovesDogs} />
-          <PetTile label="LOVES CATS" pet="cat" entry={lovesCats} />
-        </div>
-      )}
+      <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4">
+        {data?.summary && data.summary.verdicts > 0 ? (
+          <>
+            <CharTile label="MOST SPARED" id={data.summary.mostSaved} tone="walk" />
+            <CharTile label="MOST KILLED" id={data.summary.mostKilled} tone="blood" />
+            <PetTile label="LOVES DOGS" pet="dog" entry={lovesDogs} />
+            <PetTile label="LOVES CATS" pet="cat" entry={lovesCats} />
+          </>
+        ) : (
+          ["MOST SPARED", "MOST KILLED", "LOVES DOGS", "LOVES CATS"].map((l) => (
+            <SkeletonTile key={l} label={l} />
+          ))
+        )}
+      </div>
 
-      {run ? (
+      {data === null ? (
+        <>
+          <div className="mt-6 h-[58px] rounded-lg border border-line bg-surface/50 px-4 py-3">
+            <div className="skel h-6 w-64" />
+          </div>
+          <div className="mt-6">
+            <div className="skel mb-2 h-3 w-72" />
+            <div className="skel h-[150px] w-full" />
+            <div className="mt-2 flex gap-4">
+              <div className="skel h-[240px] flex-1" />
+              <div className="skel h-[240px] flex-1" />
+            </div>
+            <div className="skel mt-3 h-9 w-full" />
+          </div>
+        </>
+      ) : run ? (
         <>
           <div className="mt-6 flex flex-wrap items-baseline justify-between gap-3 rounded-lg border border-line bg-surface/50 px-4 py-3">
             <div className="display text-xl text-ink">
@@ -192,8 +213,10 @@ function CharTile({
 }) {
   return (
     <div className="flex items-center gap-3 rounded-lg border border-line bg-surface/50 px-4 py-3">
-      {id && <CharacterGlyph id={id} size={40} />}
-      <div>
+      <div className="flex h-10 w-7 shrink-0 items-end justify-center">
+        {id && <CharacterGlyph id={id} size={40} />}
+      </div>
+      <div className="min-h-[46px]">
         <div className="text-[9px] tracking-[0.28em] text-ink-faint">{label}</div>
         <div
           className={`display mt-1 text-sm leading-tight ${tone === "walk" ? "text-walk" : "text-primary"}`}
@@ -216,8 +239,10 @@ function PetTile({
 }) {
   return (
     <div className="flex items-center gap-3 rounded-lg border border-line bg-surface/50 px-4 py-3">
-      <CharacterGlyph id={pet} size={36} />
-      <div className="min-w-0">
+      <div className="flex h-10 w-9 shrink-0 items-end justify-center">
+        <CharacterGlyph id={pet} size={36} />
+      </div>
+      <div className="min-h-[46px] min-w-0">
         <div className="text-[9px] tracking-[0.28em] text-ink-faint">{label}</div>
         <div className="display mt-1 truncate text-sm leading-tight text-walk">
           {entry ? modelName(entry.model) : "—"}
@@ -227,6 +252,20 @@ function PetTile({
             {Math.round((pet === "dog" ? entry.v : 1 - entry.v) * 100)}% spare rate
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+
+function SkeletonTile({ label }: { label: string }) {
+  return (
+    <div className="flex items-center gap-3 rounded-lg border border-line bg-surface/50 px-4 py-3">
+      <div className="skel h-10 w-7 shrink-0" />
+      <div className="min-w-0 flex-1">
+        <div className="text-[9px] tracking-[0.28em] text-ink-faint">{label}</div>
+        <div className="skel mt-1.5 h-4 w-24" />
+        <div className="skel mt-1 h-2.5 w-16" />
       </div>
     </div>
   );
