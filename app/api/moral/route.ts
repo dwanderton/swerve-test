@@ -76,7 +76,7 @@ export async function GET() {
           scores: computeScores(activeRun),
           ...(() => {
             const t = computeTally(activeRun);
-            return { mostSaved: t.mostSaved, mostKilled: t.mostKilled };
+            return { mostSaved: t.mostSaved, mostKilled: t.mostKilled, characterStats: t.stats };
           })(),
           startedAt: activeRun.startedAt,
         }
@@ -107,6 +107,7 @@ export async function GET() {
       scores: r.scores ?? null,
       mostSaved: r.mostSaved ?? null,
       mostKilled: r.mostKilled ?? null,
+      characterStats: r.characterStats ?? null,
       startedAt: r.startedAt,
     })),
   });
