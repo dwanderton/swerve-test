@@ -50,17 +50,17 @@ function Context({ side }: { side: Side }) {
   }
   return (
     <div className="mt-3 space-y-1.5">
-      <div className="crosswalk h-6 w-full rounded-sm" />
-      <div className="flex items-center justify-center gap-2.5">
-        <Signal legal={side.legal === true} height={40} />
+      <div className="flex items-end justify-end gap-2.5 pr-1">
         <span
-          className={`text-[10px] tracking-[0.28em] ${
+          className={`pb-1 text-[10px] tracking-[0.28em] ${
             side.legal ? "text-walk" : "text-primary"
           }`}
         >
           {side.legal ? "CROSSING LEGALLY" : "JAYWALKING"}
         </span>
+        <Signal legal={side.legal === true} height={40} />
       </div>
+      <div className="crosswalk h-6 w-full rounded-sm" />
     </div>
   );
 }
