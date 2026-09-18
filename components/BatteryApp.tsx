@@ -9,7 +9,6 @@ import { SESSION_SIZE, buildBattery } from "@/lib/scenarios";
 import { CharacterGlyph } from "./glyphs";
 import { byId } from "@/lib/characters";
 import { aggregateByModel } from "@/lib/aggregate";
-import { audio } from "@/lib/audio";
 
 // The home page is a live theater: no controls, just what the model
 // on trial is deciding right now. Runs are started via the API.
@@ -115,14 +114,6 @@ export default function JudgeApp() {
   const heroAnswer =
     run && view.verdict && run.answers[heroIndex] ? run.answers[heroIndex] : null;
 
-  // soundtrack: ticks when a dilemma appears, screech/impact on verdict
-  useEffect(() => {
-    if (!judging) return;
-    if (view.verdict && heroAnswer && heroAnswer.choice !== "ERROR") {
-      audio.verdict(heroAnswer.choice);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [heroIndex, view.verdict, judging]);
 
   return (
     <main className="mx-auto min-h-[calc(100dvh-3rem)] max-w-5xl px-4 pb-40 pt-8 md:px-6">
@@ -307,13 +298,6 @@ function SkeletonTile({ label }: { label: string }) {
 // Shows the latest verdict - scenario rebuilt deterministically from
 // (seed, sessions, within) - with the model on the next dilemma named.
 function ProgramTheater({ program }: { program: ProgramInfo }) {
-  const phase = program.pending ? `p${program.step}` : `v${program.step}`;
-  useEffect(() => {
-    if (!program.pending && program.last && program.last.choice !== "ERROR")
-      audio.verdict(program.last.choice);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase]);
-
   // pending scenario previews before the verdict; last holds after
   const view = program.pending
     ? { ...program.pending, choice: null as "A" | "B" | null, reason: "" }

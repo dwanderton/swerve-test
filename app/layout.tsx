@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import About from "@/components/About";
-import SoundToggle from "@/components/SoundToggle";
 import { Anton, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -44,7 +43,6 @@ export default function RootLayout({
             <Link href="/results" className="hover:text-paint">
               RESULTS
             </Link>
-            <SoundToggle />
             <About />
           </div>
         </nav>
