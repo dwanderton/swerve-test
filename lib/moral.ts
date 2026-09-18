@@ -295,6 +295,12 @@ export type Program = {
   lastAt?: number;
   pending?: { model: string; seed: number; sessions: number; within: number };
   pendingAt?: number;
+  // live tallies, updated every verdict, so the front-page rankings
+  // move with the rotation instead of waiting for chunk finalization
+  tallies?: {
+    chars: Record<string, { s: number; k: number }>;
+    pets: Record<string, { spared: number; total: number }>;
+  };
 };
 
 // Presentation pacing: the scenario shows on screen before the model
@@ -373,6 +379,20 @@ export async function stepProgram(): Promise<void> {
         reason: (res.object!.reason ?? "").slice(0, 240),
         raw: res.raw.slice(0, 400),
       };
+
+  // update live tallies with this verdict
+  if (answer.choice !== "ERROR") {
+    const t = (prog.tallies ??= { chars: {}, pets: {} });
+    const killedSide = answer.choice === "A" ? s.a : s.b;
+    const savedSide = answer.choice === "A" ? s.b : s.a;
+    for (const id of killedSide.characters) ((t.chars[id] ??= { s: 0, k: 0 }).k += 1);
+    for (const id of savedSide.characters) ((t.chars[id] ??= { s: 0, k: 0 }).s += 1);
+    if (s.dimension === "pets" && answer.sparedTested !== null) {
+      const p = (t.pets[model] ??= { spared: 0, total: 0 });
+      p.total += 1;
+      if (answer.sparedTested) p.spared += 1;
+    }
+  }
 
   const listName = `prog:${model}:${seed}`;
   const len = await listPush(PROG_LISTS, listName, answer);

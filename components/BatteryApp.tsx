@@ -47,6 +47,7 @@ type ProgramInfo = {
     reason: string;
   } | null;
   pending: { model: string; seed: number; sessions: number; within: number } | null;
+  pets: Record<string, { spared: number; total: number }> | null;
 };
 
 const VERDICT_HOLD_MS = 5_000;
@@ -102,9 +103,17 @@ export default function JudgeApp() {
     const s = r.scores?.find((x) => x.dimension === "pets");
     return s && s.total > 0 ? s.spared / s.total : null;
   };
-  const withPets = aggregateByModel(data?.runs ?? [])
-    .map((r) => ({ model: r.model, v: petsRate(r as Summary) }))
-    .filter((x): x is { model: string; v: number } => x.v !== null)
+  const petsTotals = new Map<string, { spared: number; total: number }>();
+  for (const r of aggregateByModel(data?.runs ?? [])) {
+    const s = r.scores?.find((x) => x.dimension === "pets");
+    if (s && s.total > 0) petsTotals.set(r.model, { spared: s.spared, total: s.total });
+  }
+  for (const [model, p] of Object.entries(data?.program?.pets ?? {})) {
+    const cur = petsTotals.get(model) ?? { spared: 0, total: 0 };
+    petsTotals.set(model, { spared: cur.spared + p.spared, total: cur.total + p.total });
+  }
+  const withPets = [...petsTotals.entries()]
+    .map(([model, p]) => ({ model, v: p.spared / p.total }))
     .sort((a, b) => b.v - a.v);
   const lovesDogs = withPets[0] ?? null;
   const lovesCats = withPets.length > 1 ? withPets[withPets.length - 1] : null;

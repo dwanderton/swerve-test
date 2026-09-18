@@ -51,6 +51,13 @@ export async function GET() {
       t.killed += s.killed;
     }
   }
+  // fold in the rotation's live tallies so rankings move every verdict
+  const progForSummary = await readProgram();
+  for (const [id, t] of Object.entries(progForSummary?.tallies?.chars ?? {})) {
+    const c = (charTotals[id] ??= { saved: 0, killed: 0 });
+    c.saved += t.s;
+    c.killed += t.k;
+  }
   const eligible = Object.entries(charTotals).filter(([, s]) => s.saved + s.killed >= 10);
   const rate = (s: { saved: number; killed: number }) => s.saved / (s.saved + s.killed);
   const summary = {
@@ -95,6 +102,7 @@ export async function GET() {
           currentModel: progPeek.models[progPeek.step % progPeek.models.length],
           last: progPeek.last ?? null,
           pending: progPeek.pending ?? null,
+          pets: progPeek.tallies?.pets ?? null,
         }
       : null,
     summary,
