@@ -63,10 +63,11 @@ function Station({
   );
 }
 
+// Jubilee-line silver
 const Line = ({ round }: { round?: "left" | "right" }) => (
   <div
-    className={`absolute bg-paint ${round === "left" ? "rounded-l-full" : round === "right" ? "rounded-r-full" : ""}`}
-    style={{ left: 0, right: 0, top: LINE_Y, height: 5 }}
+    className={`absolute ${round === "left" ? "rounded-l-full" : round === "right" ? "rounded-r-full" : ""}`}
+    style={{ left: 0, right: 0, top: LINE_Y, height: 5, background: "#a0a5a9" }}
   />
 );
 
