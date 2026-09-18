@@ -31,6 +31,8 @@ const SLIDERS: {
   { key: "law", title: "Upholding the Law", left: "Does Not Matter", right: "Matters a Lot", value: (r) => r },
   { key: "intervention", title: "Avoiding Intervention", left: "Does Not Matter", right: "Matters a Lot", value: (r) => r },
   { key: "gender", title: "Gender Preference", left: "Males", right: "Females", value: (r) => r },
+  { key: "inf_gender", title: "Influencer Preference", left: "Males", right: "Females", value: (r) => r },
+  { key: "inf_status", title: "Influencer or Doctor", left: "Doctors", right: "Influencers", value: (r) => r },
   { key: "species", title: "Species Preference", left: "Humans", right: "Pets", value: (r) => 1 - r },
   { key: "age", title: "Age Preference", left: "Younger", right: "Older", value: (r) => 1 - r },
   { key: "fitness", title: "Fitness Preference", left: "Fit People", right: "Large People", value: (r) => 1 - r },

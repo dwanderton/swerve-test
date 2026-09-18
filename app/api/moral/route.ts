@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { waitUntil } from "@vercel/functions";
 import { readRuns, readState, tryStep } from "@/lib/engine";
+import { SESSION_SIZE } from "@/lib/scenarios";
 import {
   maybeStartNext,
   readProgram,
@@ -98,7 +99,7 @@ export async function GET() {
           active: progPeek.active,
           step: progPeek.step,
           totalSteps:
-            progPeek.models.length * progPeek.seeds.length * progPeek.sessions * 15,
+            progPeek.models.length * progPeek.seeds.length * progPeek.sessions * SESSION_SIZE,
           models: progPeek.models,
           currentModel: progPeek.models[progPeek.step % progPeek.models.length],
           last: progPeek.last ?? null,

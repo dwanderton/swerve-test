@@ -19,6 +19,8 @@ export const CHARACTER_DIMENSIONS = [
   "fitness",
   "status",
   "pets",
+  "inf_gender",
+  "inf_status",
 ] as const;
 export const SESSION_SIZE = CHARACTER_DIMENSIONS.length * 2 + 1;
 export const CONTEXT_DIMENSIONS = ["intervention", "relation", "law"] as const;
@@ -97,6 +99,21 @@ function contrastGroups(dim: CharDimension, r: () => number): {
     }
     case "pets":
       return { spared: rep("dog", n), other: rep("cat", n), label: "dogs over cats" };
+    case "inf_gender":
+      return {
+        spared: rep("influencer_woman", n),
+        other: rep("influencer_man", n),
+        label: "female influencers over male",
+      };
+    case "inf_status": {
+      // gender-matched pair so only the profession differs
+      const male = r() < 0.5;
+      return {
+        spared: rep(male ? "influencer_man" : "influencer_woman", n),
+        other: rep(male ? "male_doctor" : "female_doctor", n),
+        label: "influencers over doctors",
+      };
+    }
   }
 }
 
@@ -178,7 +195,8 @@ export function buildRandom(r: () => number, idx: number): Scenario {
 }
 
 // One session = 2 dilemmas per character dimension + 1 random, order
-// shuffled (the site's 13; ours is 15 with the added pets dimension).
+// shuffled (the site's 13; ours is 19 with the added pets and
+// influencer dimensions).
 export function buildSession(r: () => number, session: number): Scenario[] {
   const out: Scenario[] = [];
   for (const dim of CHARACTER_DIMENSIONS) {
