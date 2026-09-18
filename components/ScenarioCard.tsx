@@ -106,12 +106,12 @@ export function OutcomePanel({
         <Context side={side} />
       </div>
       {verdict && (
-        <div className="stamp pointer-events-none absolute inset-0 flex items-center justify-center">
+        <div className="stamp pointer-events-none absolute right-2 top-1 z-10">
           <span
-            className={`display rounded border-4 px-4 py-1 text-4xl ${
+            className={`display inline-block rounded border-[3px] px-3 py-0.5 text-2xl ${
               verdict === "KILLED" ? "border-primary text-primary" : "border-walk text-walk"
             }`}
-            style={{ background: "rgba(11,12,14,0.55)" }}
+            style={{ background: "rgba(11,12,14,0.55)", transform: "rotate(-7deg)" }}
           >
             {verdict}
           </span>
