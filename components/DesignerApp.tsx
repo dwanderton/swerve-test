@@ -5,7 +5,7 @@ import { Btn, ModelSelect } from "./ui";
 import { OutcomePanel, SceneTop } from "./ScenarioCard";
 import { CharacterGlyph } from "./glyphs";
 import { CHARACTERS, describeGroup } from "@/lib/characters";
-import type { Side } from "@/lib/scenarios";
+import { buildRandom, rng, type Side } from "@/lib/scenarios";
 
 type SideDraft = {
   characters: string[];
@@ -118,6 +118,13 @@ export default function DesignerApp() {
     setResult(null);
   };
 
+  const randomize = () => {
+    const s = buildRandom(rng(Date.now() >>> 0), 0);
+    setA({ characters: s.a.characters, where: s.a.where, legal: s.a.legal ?? true });
+    setB({ characters: s.b.characters, where: s.b.where, legal: s.b.legal ?? true });
+    setResult(null);
+  };
+
   const ask = async () => {
     setBusy(true);
     setResult(null);
@@ -150,6 +157,7 @@ export default function DesignerApp() {
           <Btn tone="go" disabled={!ready || busy} onClick={ask}>
             {busy ? "DELIBERATING…" : "ASK THE MODEL"}
           </Btn>
+          <Btn onClick={randomize}>RANDOM</Btn>
           <Btn onClick={reset}>RESET</Btn>
         </div>
       </div>
