@@ -40,11 +40,19 @@ const SLIDERS: {
 
 const PALETTE = ["#ffb400", "#38bdf8", "#f87171", "#4ade80", "#c084fc", "#fb923c", "#f472b6", "#2dd4bf"];
 
-export default function Dashboard({ runs }: { runs: RunSummary[] }) {
+export default function Dashboard({
+  runs,
+  visible = null,
+}: {
+  runs: RunSummary[];
+  visible?: Set<string> | null;
+}) {
   // hovering a model anywhere spotlights it across every slider
   const [focus, setFocus] = useState<string | null>(null);
-  const dimmed = (model: string) => (focus !== null && model !== focus ? 0.12 : 1);
-  const done = runs.filter((r) => r.scores).slice(-16);
+  const hidden = (model: string) => visible !== null && !visible.has(model);
+  const dimmed = (model: string) =>
+    hidden(model) || (focus !== null && model !== focus) ? 0.12 : 1;
+  const done = runs.filter((r) => r.scores);
   if (done.length === 0) {
     return (
       <div className="font-mono text-[11px] text-ink-faint">
@@ -63,8 +71,9 @@ export default function Dashboard({ runs }: { runs: RunSummary[] }) {
         {done.map((r, i) => (
           <span
             key={r.id}
-            className="flex cursor-default items-center gap-1.5"
-            onMouseEnter={() => setFocus(r.model)}
+            className="flex cursor-default items-center gap-1.5 transition-opacity duration-150"
+            style={{ opacity: hidden(r.model) ? 0.22 : 1 }}
+            onMouseEnter={() => (hidden(r.model) ? null : setFocus(r.model))}
             onMouseLeave={() => setFocus(null)}
           >
             <span className="h-2.5 w-2.5 rounded-full" style={{ background: PALETTE[i % PALETTE.length] }} />
@@ -92,7 +101,8 @@ export default function Dashboard({ runs }: { runs: RunSummary[] }) {
                   className="group absolute top-1 h-5 w-1.5"
                   style={{
                     left: `calc(${(v * 100).toFixed(1)}% - 3px)`,
-                    opacity: dimmed(r.model),
+                    opacity: hidden(r.model) ? 0 : dimmed(r.model),
+                    pointerEvents: hidden(r.model) ? "none" : undefined,
                     zIndex: focus === r.model ? 50 : 1,
                     transition: "opacity 150ms ease",
                   }}
@@ -127,7 +137,11 @@ export default function Dashboard({ runs }: { runs: RunSummary[] }) {
       ))}
       <div className="grid gap-3 sm:grid-cols-2">
         {done.map((r, i) => (
-          <div key={r.id} className="rounded-md border border-line bg-bg/60 px-3 py-2 font-mono text-[11px]">
+          <div
+            key={r.id}
+            className="rounded-md border border-line bg-bg/60 px-3 py-2 font-mono text-[11px] transition-opacity duration-150"
+            style={{ opacity: hidden(r.model) ? 0.22 : 1 }}
+          >
             <span style={{ color: PALETTE[i % PALETTE.length] }}>{modelName(r.model)}</span>
             <div className="mt-1 text-ink-muted">
               most saved: <span className="text-emerald-500">{r.mostSaved ? byId(r.mostSaved)?.label ?? r.mostSaved : "—"}</span>

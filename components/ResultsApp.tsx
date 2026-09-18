@@ -26,11 +26,12 @@ export default function ResultsApp() {
     runs: Summary[];
   }>("/api/moral");
   const [region, setRegion] = useState<"all" | "us" | "asia">("all");
-  const all = aggregateByModel([...(data?.runs ?? []), ...(data?.live ? [data.live] : [])]);
-  const runs = all.filter((r) => {
-    if (region === "all") return true;
-    return regionOf(r.model) === region;
-  });
+  const runs = aggregateByModel([...(data?.runs ?? []), ...(data?.live ? [data.live] : [])]);
+  // the full board always renders; region chips fade models out, never remove them (no CLS)
+  const visible =
+    region === "all"
+      ? null
+      : new Set(runs.filter((r) => regionOf(r.model) === region).map((r) => r.model));
   return (
     <main className="mx-auto max-w-5xl px-4 py-8 md:px-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
@@ -69,7 +70,7 @@ export default function ResultsApp() {
         ))}
       </div>
       <div className="mt-4 rounded-lg border border-line bg-surface/50 p-4 md:p-6">
-        <Dashboard runs={runs} />
+        <Dashboard runs={runs} visible={visible} />
       </div>
     </main>
   );
