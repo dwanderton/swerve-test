@@ -168,59 +168,45 @@ export default function JudgeApp() {
             <div className="skel mt-3 h-9 w-full" />
           </div>
         </>
-      ) : run ? (
-        <>
-          <div className="mt-6 flex flex-wrap items-baseline justify-between gap-3 rounded-lg border border-line bg-surface/50 px-4 py-3">
-            <div className="display text-xl text-ink">
-              ON TRIAL: <span className="text-paint">{modelName(run.model)}</span>
+      ) : run && hero ? (
+        <div className="mt-6">
+          <div className="mb-3 flex flex-wrap items-baseline justify-between gap-3 px-1">
+            <div className="text-[11px] tracking-[0.2em] text-ink-muted">
+              <span className="text-ink">{modelName(run.model)}</span>{" "}
+              <span className="text-paint">{view.verdict ? "judged" : "faces"}</span>{" "}
+              {hero.dimension === "random"
+                ? "a fully random dilemma"
+                : `a dilemma testing ${hero.testedLabel}`}
             </div>
-            <div className="flex items-baseline gap-4">
-              <span className="display text-xl leading-none text-paint">
-                {String(judging ? run.index : run.answers.length).padStart(3, "0")}
-                <span className="text-ink-faint">/{String(total).padStart(3, "0")}</span>
-              </span>
-              <span className="text-[10px] tracking-[0.24em] text-ink-faint">
-                {judging ? (
-                  <span className="deliberating text-paint">DELIBERATING</span>
-                ) : (
-                  run.status.toUpperCase()
-                )}
-              </span>
+            <span className="text-[10px] tracking-[0.2em] text-ink-faint">
+              ON TRIAL · CASE #{heroIndex + 1}/{total}
+            </span>
+          </div>
+          <div
+            style={{
+              opacity: view.out ? 0 : 1,
+              transition: "opacity 400ms ease",
+            }}
+          >
+            <ScenarioCard
+              scenario={hero}
+              choice={
+                heroAnswer && heroAnswer.choice !== "ERROR" ? heroAnswer.choice : null
+              }
+              deliberating={judging && !view.verdict}
+            />
+            <div className="mt-3 h-[3.4rem]">
+              {heroAnswer?.reason && (
+                <div className="flex h-full items-center rounded border-l-4 border-paint bg-surface/60 px-4 text-[12px] italic text-ink">
+                  <span className="line-clamp-2">
+                    <span className="text-paint">{modelName(run.model)}:</span> “
+                    {heroAnswer.reason}”
+                  </span>
+                </div>
+              )}
             </div>
           </div>
-
-          {hero && (
-            <div className="mt-6">
-              <div className="mb-2 text-[10px] tracking-[0.24em] text-ink-faint">
-                DILEMMA {hero.id.toUpperCase()} ·{" "}
-                {hero.dimension === "random"
-                  ? "FULLY RANDOM"
-                  : `TESTS ${hero.testedLabel.toUpperCase()}`}
-              </div>
-              <div
-                style={{
-                  opacity: view.out ? 0 : 1,
-                  transition: "opacity 400ms ease",
-                }}
-              >
-                <ScenarioCard
-                  scenario={hero}
-                  choice={
-                    heroAnswer && heroAnswer.choice !== "ERROR" ? heroAnswer.choice : null
-                  }
-                  deliberating={judging && !view.verdict}
-                />
-                <div className="mt-3 h-[3.4rem]">
-                  {heroAnswer?.reason && (
-                    <div className="flex h-full items-center rounded border-l-4 border-paint bg-surface/60 px-4 text-[12px] italic text-ink">
-                      <span className="line-clamp-2">“{heroAnswer.reason}”</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-        </>
+        </div>
       ) : (
         <Panel title="STANDBY" className="mt-6">
           <div className="text-[11px] tracking-[0.2em] text-ink-faint">
