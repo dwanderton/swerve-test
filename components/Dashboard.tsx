@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { modelName } from "@/lib/models";
 import { CharacterGlyph } from "./glyphs";
@@ -43,15 +43,31 @@ const PALETTE = ["#ffb400", "#38bdf8", "#f87171", "#4ade80", "#c084fc", "#fb923c
 export default function Dashboard({
   runs,
   visible = null,
+  resetKey = 0,
 }: {
   runs: RunSummary[];
   visible?: Set<string> | null;
+  resetKey?: number;
 }) {
-  // hovering a model anywhere spotlights it across every slider
+  // hovering a model anywhere spotlights it across every slider;
+  // clicking a name pins its highlight (several can be pinned), and
+  // any region-chip click clears the pins via resetKey
   const [focus, setFocus] = useState<string | null>(null);
+  const [pinned, setPinned] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    setPinned(new Set());
+  }, [resetKey]);
+  const togglePin = (model: string) =>
+    setPinned((prev) => {
+      const next = new Set(prev);
+      if (next.has(model)) next.delete(model);
+      else next.add(model);
+      return next;
+    });
   const hidden = (model: string) => visible !== null && !visible.has(model);
+  const lit = (model: string) => focus === model || pinned.has(model);
   const dimmed = (model: string) =>
-    hidden(model) || (focus !== null && model !== focus) ? 0.12 : 1;
+    hidden(model) || ((focus !== null || pinned.size > 0) && !lit(model)) ? 0.12 : 1;
   const done = runs.filter((r) => r.scores);
   if (done.length === 0) {
     return (
@@ -71,13 +87,22 @@ export default function Dashboard({
         {done.map((r, i) => (
           <span
             key={r.id}
-            className="flex cursor-default items-center gap-1.5 transition-opacity duration-150"
+            className="flex cursor-pointer select-none items-center gap-1.5 transition-opacity duration-150"
             style={{ opacity: hidden(r.model) ? 0.22 : 1 }}
             onMouseEnter={() => (hidden(r.model) ? null : setFocus(r.model))}
             onMouseLeave={() => setFocus(null)}
+            onClick={() => (hidden(r.model) ? null : togglePin(r.model))}
           >
-            <span className="h-2.5 w-2.5 rounded-full" style={{ background: PALETTE[i % PALETTE.length] }} />
-            <span className="text-ink-muted">
+            <span
+              className="h-2.5 w-2.5 rounded-full"
+              style={{
+                background: PALETTE[i % PALETTE.length],
+                boxShadow: pinned.has(r.model)
+                  ? `0 0 0 2px var(--bg), 0 0 0 3.5px ${PALETTE[i % PALETTE.length]}`
+                  : undefined,
+              }}
+            />
+            <span className={pinned.has(r.model) ? "text-ink" : "text-ink-muted"}>
               {modelName(r.model)}
               {(r.status === "live" || r.status === "aggregate") && r.status === "live" ? <span className="deliberating text-paint"> · LIVE</span> : null}
             </span>
@@ -103,7 +128,7 @@ export default function Dashboard({
                     left: `calc(${(v * 100).toFixed(1)}% - 3px)`,
                     opacity: hidden(r.model) ? 0 : dimmed(r.model),
                     pointerEvents: hidden(r.model) ? "none" : undefined,
-                    zIndex: focus === r.model ? 50 : 1,
+                    zIndex: focus === r.model ? 50 : pinned.has(r.model) ? 40 : 1,
                     transition: "opacity 150ms ease",
                   }}
                   onMouseEnter={() => setFocus(r.model)}

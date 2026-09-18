@@ -29,6 +29,8 @@ export default function ResultsApp() {
     summary: { characterTotals?: CharTotals } | null;
   }>("/api/moral");
   const [region, setRegion] = useState<"all" | "us" | "asia">("all");
+  // any chip click clears the dashboard's pinned models
+  const [resetKey, setResetKey] = useState(0);
   const allRuns = [...(data?.runs ?? []), ...(data?.live ? [data.live] : [])];
   const runs = aggregateByModel(allRuns);
   // the full board always renders; region chips fade models out, never remove them (no CLS)
@@ -76,7 +78,10 @@ export default function ResultsApp() {
         ).map(([key, label]) => (
           <button
             key={key}
-            onClick={() => setRegion(key)}
+            onClick={() => {
+              setRegion(key);
+              setResetKey((k) => k + 1);
+            }}
             className={`rounded border px-3 py-1.5 text-[10px] tracking-[0.24em] transition-colors ${
               region === key
                 ? "border-paint bg-paint text-black"
@@ -89,7 +94,7 @@ export default function ResultsApp() {
       </div>
       <SpareSpectrum totals={totals} />
       <div className="mt-4 rounded-lg border border-line bg-surface/50 p-4 md:p-6">
-        <Dashboard runs={runs} visible={visible} />
+        <Dashboard runs={runs} visible={visible} resetKey={resetKey} />
       </div>
     </main>
   );
