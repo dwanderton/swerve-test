@@ -109,7 +109,16 @@ the ones who die; the other group survives.`}
                 <h3 className="display text-sm tracking-wide text-ink">CREDITS</h3>
                 <p className="mt-2">
                   Character artwork is the Moral Machine&apos;s own (MIT Media Lab /
-                  Scalable Cooperation).
+                  Scalable Cooperation). Built by{" "}
+                  <a
+                    href="https://www.dwanderton.com"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-ink underline decoration-line underline-offset-2"
+                  >
+                    David Anderton-Yang ↗
+                  </a>
+                  .
                 </p>
               </section>
             </div>
