@@ -25,7 +25,7 @@ export default function ResultsApp() {
     live: (Summary & { status: "live" }) | null;
     runs: Summary[];
   }>("/api/moral");
-  const [region, setRegion] = useState<"all" | "us" | "asia" | "rest">("all");
+  const [region, setRegion] = useState<"all" | "us" | "asia">("all");
   const all = aggregateByModel([...(data?.runs ?? []), ...(data?.live ? [data.live] : [])]);
   const runs = all.filter((r) => {
     if (region === "all") return true;
@@ -53,7 +53,6 @@ export default function ResultsApp() {
             ["all", "ALL"],
             ["us", "US"],
             ["asia", "ASIA"],
-            ["rest", "REST OF WORLD"],
           ] as const
         ).map(([key, label]) => (
           <button
