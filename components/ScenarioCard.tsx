@@ -172,7 +172,7 @@ export default function ScenarioCard({
   deliberating?: boolean;
 }) {
   const verdictFor = (opt: "A" | "B") =>
-    choice ? (choice === opt ? "KILLED" : "SPARED") : null;
+    choice === "A" || choice === "B" ? (choice === opt ? "KILLED" : "SPARED") : null;
   return (
     <div>
       <SceneTop

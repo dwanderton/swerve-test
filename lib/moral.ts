@@ -24,6 +24,19 @@ const SCHEMA = {
 
 type Reply = { choice: "A" | "B"; reason: string };
 
+// Providers occasionally ignore the enum and reply "Outcome A", or
+// refuse outright. Coerce clear intent; anything else is no verdict.
+export function normalizeChoice(raw: unknown): "A" | "B" | null {
+  if (raw === "A" || raw === "B") return raw;
+  if (typeof raw === "string") {
+    const m = raw.trim().match(/^(?:outcome\s*)?([ab])\b/i);
+    if (m) return m[1].toUpperCase() as "A" | "B";
+  }
+  return null;
+}
+
+
+
 export type MoralAnswer = {
   scenarioId: string;
   dimension: Scenario["dimension"];
@@ -243,15 +256,26 @@ export async function stepBattery(): Promise<void> {
     }
   } else {
     run.consecutiveErrors = 0;
-    const choice = res.object!.choice;
-    run.answers.push({
-      scenarioId: s.id,
-      dimension: s.dimension,
-      choice,
-      sparedTested: s.sparedByChoosing === null ? null : choice === s.sparedByChoosing,
-      reason: (res.object!.reason ?? "").slice(0, 240),
-      raw: res.raw.slice(0, 400),
-    });
+    const choice = normalizeChoice(res.object!.choice);
+    run.answers.push(
+      choice === null
+        ? {
+            scenarioId: s.id,
+            dimension: s.dimension,
+            choice: "ERROR",
+            sparedTested: null,
+            reason: "",
+            raw: res.raw.slice(0, 400),
+          }
+        : {
+            scenarioId: s.id,
+            dimension: s.dimension,
+            choice,
+            sparedTested: s.sparedByChoosing === null ? null : choice === s.sparedByChoosing,
+            reason: (res.object!.reason ?? "").slice(0, 240),
+            raw: res.raw.slice(0, 400),
+          },
+    );
   }
   run.index++;
   if (run.index >= battery.length) await finish(run, "done");
@@ -364,24 +388,26 @@ export async function stepProgram(): Promise<void> {
       additionalProperties: false,
     },
   );
-  const answer: MoralAnswer = res.error
-    ? {
-        scenarioId: s.id,
-        dimension: s.dimension,
-        choice: "ERROR",
-        sparedTested: null,
-        reason: "",
-        raw: res.raw,
-      }
-    : {
-        scenarioId: s.id,
-        dimension: s.dimension,
-        choice: res.object!.choice,
-        sparedTested:
-          s.sparedByChoosing === null ? null : res.object!.choice === s.sparedByChoosing,
-        reason: (res.object!.reason ?? "").slice(0, 240),
-        raw: res.raw.slice(0, 400),
-      };
+  const progChoice = res.error ? null : normalizeChoice(res.object!.choice);
+  const answer: MoralAnswer =
+    res.error || progChoice === null
+      ? {
+          scenarioId: s.id,
+          dimension: s.dimension,
+          choice: "ERROR",
+          sparedTested: null,
+          reason: "",
+          raw: res.raw.slice(0, 400),
+        }
+      : {
+          scenarioId: s.id,
+          dimension: s.dimension,
+          choice: progChoice,
+          sparedTested:
+            s.sparedByChoosing === null ? null : progChoice === s.sparedByChoosing,
+          reason: (res.object!.reason ?? "").slice(0, 240),
+          raw: res.raw.slice(0, 400),
+        };
 
   // update live tallies with this verdict
   if (answer.choice !== "ERROR") {
