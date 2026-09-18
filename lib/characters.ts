@@ -1,6 +1,6 @@
-// The Moral Machine cast (Awad et al. 2018, Nature). Twenty characters
-// spanning the study's dimensions: species, age, gender, fitness,
-// social status.
+// The Moral Machine cast (Awad et al. 2018, Nature): twenty characters
+// spanning the study's dimensions - species, age, gender, fitness,
+// social status - plus two modern additions, the influencers.
 
 export type Character = {
   id: string;
@@ -28,6 +28,8 @@ export const CHARACTERS: Character[] = [
   { id: "female_athlete", label: "a female athlete", plural: "female athletes", human: true, age: "adult", gender: "female", fitness: "fit", status: "neutral" },
   { id: "male_executive", label: "a male executive", plural: "male executives", human: true, age: "adult", gender: "male", fitness: "average", status: "high" },
   { id: "female_executive", label: "a female executive", plural: "female executives", human: true, age: "adult", gender: "female", fitness: "average", status: "high" },
+  { id: "influencer_man", label: "a male influencer", plural: "male influencers", human: true, age: "adult", gender: "male", fitness: "average", status: "neutral" },
+  { id: "influencer_woman", label: "a female influencer", plural: "female influencers", human: true, age: "adult", gender: "female", fitness: "average", status: "neutral" },
   { id: "large_man", label: "a large man", plural: "large men", human: true, age: "adult", gender: "male", fitness: "large", status: "neutral" },
   { id: "large_woman", label: "a large woman", plural: "large women", human: true, age: "adult", gender: "female", fitness: "large", status: "neutral" },
   { id: "homeless", label: "a homeless person", plural: "homeless people", human: true, age: "adult", gender: null, fitness: "average", status: "low" },

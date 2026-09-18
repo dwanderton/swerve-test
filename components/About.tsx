@@ -49,8 +49,10 @@ export default function About() {
                   >
                     Awad et al., “The Moral Machine experiment”, Nature 2018 ↗
                   </a>
-                  : the twenty-character cast, sessions of two dilemmas per character
-                  dimension plus one fully random, and the three contextual factors —
+                  : the twenty-character cast (extended here with two modern
+                  additions, a male and a female influencer), sessions of two
+                  dilemmas per character dimension plus one fully random, and the
+                  three contextual factors —
                   interventionism, passengers vs pedestrians, legality — crossed into
                   every scenario at random. The original platform lives at{" "}
                   <a

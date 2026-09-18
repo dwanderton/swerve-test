@@ -189,6 +189,8 @@ const Mask = () => <rect x="10.8" y="4.6" width="10.4" height="3.4" rx="1.5" fil
 const GLYPHS: Record<string, React.ReactNode> = {
   man: <Standing />,
   woman: <Skirted />,
+  influencer_man: <Standing />,
+  influencer_woman: <Skirted />,
   pregnant_woman: <Skirted belly />,
   baby: <Stroller />,
   boy: <Child />,
