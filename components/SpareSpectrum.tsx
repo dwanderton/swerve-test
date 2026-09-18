@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { CharacterGlyph, CarTopView } from "./glyphs";
 import { byId } from "@/lib/characters";
 
@@ -8,38 +9,42 @@ export type CharTotals = Record<string, { saved: number; killed: number }>;
 // A Beck-style route diagram: one straight line, the car travelling
 // left to right, least spared first. The car and both termini stay
 // pinned; only the intermediate stations scroll when space runs out.
+// The tooltip is a single fixed-position element so it can overhang
+// the scroll container instead of being clipped by it.
 const CAR_ZONE = 52;
 const END_W = 44;
 const MIN_SPACING = 40;
 const LINE_Y = 78;
 const H = 104;
 
+type Tip = { label: string; x: number; y: number };
+
 function Station({
   left,
   entry,
   terminus,
-  tipAlign = "center",
+  onTip,
 }: {
   left: string;
   entry: { id: string; rate: number };
   terminus: boolean;
-  tipAlign?: "center" | "left" | "right";
+  onTip: (tip: Tip | null) => void;
 }) {
   const name = (byId(entry.id)?.label ?? entry.id).replace(/^an? /, "").toUpperCase();
-  // hidden (not opacity-0) so the wide tooltip never widens the scroll
-  // area; edge stations anchor it inward for the same reason
-  const tipPos =
-    tipAlign === "left" ? "left-0" : tipAlign === "right" ? "right-0" : "left-1/2 -translate-x-1/2";
   return (
     <div
-      className="group absolute top-0 h-full"
+      className="absolute top-0 h-full"
       style={{ left, width: MIN_SPACING, transform: "translateX(-50%)" }}
+      onMouseEnter={(ev) => {
+        const r = ev.currentTarget.getBoundingClientRect();
+        onTip({
+          label: `${name} · ${Math.round(entry.rate * 100)}%`,
+          x: r.left + r.width / 2,
+          y: r.top + 30,
+        });
+      }}
+      onMouseLeave={() => onTip(null)}
     >
-      <div
-        className={`pointer-events-none absolute top-0 z-10 hidden whitespace-nowrap rounded border border-line bg-bg px-2 py-1 text-[10px] text-ink group-hover:block ${tipPos}`}
-      >
-        {name} · {Math.round(entry.rate * 100)}%
-      </div>
       <div className="absolute left-1/2 -translate-x-1/2" style={{ top: 34 }}>
         <CharacterGlyph id={entry.id} size={36} />
       </div>
@@ -66,6 +71,7 @@ const Line = ({ round }: { round?: "left" | "right" }) => (
 );
 
 export default function SpareSpectrum({ totals }: { totals: CharTotals | null }) {
+  const [tip, setTip] = useState<Tip | null>(null);
   const stations = Object.entries(totals ?? {})
     .filter(([, s]) => s.saved + s.killed >= 10)
     .map(([id, s]) => ({ id, rate: s.saved / (s.saved + s.killed) }))
@@ -76,6 +82,14 @@ export default function SpareSpectrum({ totals }: { totals: CharTotals | null })
   const middle = n > 2 ? stations.slice(1, -1) : [];
   return (
     <div className="mt-4 rounded-lg border border-line bg-surface/50 p-4 md:p-6">
+      {tip && (
+        <div
+          className="pointer-events-none fixed z-50 whitespace-nowrap rounded border border-line bg-bg px-2 py-1 text-[10px] text-ink"
+          style={{ left: tip.x, top: tip.y, transform: "translate(-50%, -100%)" }}
+        >
+          {tip.label}
+        </div>
+      )}
       <div className="flex items-baseline gap-3">
         <span className="display text-base tracking-wide text-primary">LEAST SPARED</span>
         <span className="font-mono text-[10px] text-ink-faint">→</span>
@@ -96,7 +110,7 @@ export default function SpareSpectrum({ totals }: { totals: CharTotals | null })
                   <CarTopView size={38} />
                 </div>
               </div>
-              <Station left={`${CAR_ZONE + END_W / 2}px`} entry={first} terminus tipAlign="left" />
+              <Station left={`${CAR_ZONE + END_W / 2}px`} entry={first} terminus onTip={setTip} />
             </div>
             <div className="relative min-w-0 flex-1 overflow-x-auto overflow-y-hidden">
               <div
@@ -104,24 +118,21 @@ export default function SpareSpectrum({ totals }: { totals: CharTotals | null })
                 style={{ minWidth: middle.length * MIN_SPACING }}
               >
                 <Line />
-                {middle.map((e, i) => {
-                  const frac = (i + 0.5) / middle.length;
-                  return (
-                    <Station
-                      key={e.id}
-                      left={`calc(100% * ${frac.toFixed(4)})`}
-                      entry={e}
-                      terminus={false}
-                      tipAlign={frac < 0.25 ? "left" : frac > 0.75 ? "right" : "center"}
-                    />
-                  );
-                })}
+                {middle.map((e, i) => (
+                  <Station
+                    key={e.id}
+                    left={`calc(100% * ${((i + 0.5) / middle.length).toFixed(4)})`}
+                    entry={e}
+                    terminus={false}
+                    onTip={setTip}
+                  />
+                ))}
               </div>
             </div>
             {last && (
               <div className="relative shrink-0" style={{ width: END_W + 12 }}>
                 <Line round="right" />
-                <Station left={`${END_W / 2}px`} entry={last} terminus tipAlign="right" />
+                <Station left={`${END_W / 2}px`} entry={last} terminus onTip={setTip} />
               </div>
             )}
           </div>
