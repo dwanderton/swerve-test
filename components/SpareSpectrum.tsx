@@ -132,7 +132,11 @@ export default function SpareSpectrum({ totals }: { totals: CharTotals | null })
             </div>
             {last && (
               <div className="relative shrink-0" style={{ width: END_W + 12 }}>
-                <Line round="right" />
+                {/* the line terminates at the last station's ring */}
+                <div
+                  className="absolute rounded-r-full"
+                  style={{ left: 0, width: END_W / 2, top: LINE_Y, height: 5, background: "#a0a5a9" }}
+                />
                 <Station left={`${END_W / 2}px`} entry={last} terminus onTip={setTip} />
               </div>
             )}
