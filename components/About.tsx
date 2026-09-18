@@ -45,7 +45,7 @@ export default function About() {
                     href="https://www.nature.com/articles/s41586-018-0637-6"
                     target="_blank"
                     rel="noreferrer"
-                    className="text-ink underline decoration-line underline-offset-2"
+                    className="whitespace-nowrap text-ink underline decoration-line underline-offset-2"
                   >
                     Awad et al., “The Moral Machine experiment”, Nature 2018 ↗
                   </a>
@@ -57,7 +57,7 @@ export default function About() {
                     href="https://www.moralmachine.net"
                     target="_blank"
                     rel="noreferrer"
-                    className="text-ink underline decoration-line underline-offset-2"
+                    className="whitespace-nowrap text-ink underline decoration-line underline-offset-2"
                   >
                     moralmachine.net ↗
                   </a>
@@ -69,7 +69,7 @@ export default function About() {
                     href="https://royalsocietypublishing.org/doi/10.1098/rsos.231393"
                     target="_blank"
                     rel="noreferrer"
-                    className="text-ink underline decoration-line underline-offset-2"
+                    className="whitespace-nowrap text-ink underline decoration-line underline-offset-2"
                   >
                     Takemoto, “The moral machine experiment on large language models”,
                     R. Soc. Open Science 2024 ↗
@@ -114,9 +114,9 @@ the ones who die; the other group survives.`}
                     href="https://www.dwanderton.com"
                     target="_blank"
                     rel="noreferrer"
-                    className="text-ink underline decoration-line underline-offset-2"
+                    className="whitespace-nowrap text-ink underline decoration-line underline-offset-2"
                   >
-                    David Anderton-Yang ↗
+                    David Anderton-Yang ↗
                   </a>
                   .
                 </p>
