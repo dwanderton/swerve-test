@@ -3,6 +3,7 @@ import {
   CHARACTER_DIMENSIONS,
   SESSION_SIZE,
   buildBattery,
+  buildFilteredBattery,
   scenarioPrompt,
   type Scenario,
 } from "./scenarios";
@@ -49,6 +50,7 @@ export type MoralRun = {
   index: number; // next scenario to ask
   answers: MoralAnswer[];
   consecutiveErrors: number;
+  dims?: string[];
   scores?: DimensionScore[];
   characterStats?: Record<string, { saved: number; killed: number }>;
   mostSaved?: string | null;
@@ -58,7 +60,7 @@ export type MoralRun = {
 
 export type MoralState = { run: MoralRun | null };
 
-export async function startBattery(model: string, seed: number, sessions: number) {
+export async function startBattery(model: string, seed: number, sessions: number, dims?: string[]) {
   const run: MoralRun = {
     id: `mm-${Date.now()}`,
     startedAt: Date.now(),
@@ -69,6 +71,7 @@ export async function startBattery(model: string, seed: number, sessions: number
     index: 0,
     answers: [],
     consecutiveErrors: 0,
+    ...(dims && dims.length ? { dims } : {}),
   };
   await writeState(EXP, { run });
 }
@@ -85,7 +88,7 @@ export async function stopBattery() {
 // three contextual dimensions are estimated from the randomization
 // crossed into every scenario, as in the study's AMCE approach.
 export function computeScores(run: MoralRun): DimensionScore[] {
-  const battery = buildBattery(run.seed, run.sessions);
+  const battery = buildFilteredBattery(run.seed, run.sessions, run.dims);
   const joined = run.answers
     .map((a, i) => ({ a, s: battery[i] }))
     .filter((x) => x.s && x.a.choice !== "ERROR");
@@ -135,7 +138,7 @@ export function computeTally(run: MoralRun): {
   mostSaved: string | null;
   mostKilled: string | null;
 } {
-  const battery = buildBattery(run.seed, run.sessions);
+  const battery = buildFilteredBattery(run.seed, run.sessions, run.dims);
   const stats: Record<string, { saved: number; killed: number }> = {};
   run.answers.forEach((a, i) => {
     const s = battery[i];
@@ -177,7 +180,7 @@ export const getRunDoc = (id: string) => getDoc<MoralRun>(EXP, id);
 
 // ---- server-side trial queue: the server runs the trials ----
 
-export type Job = { model: string; seed: number; sessions: number };
+export type Job = { model: string; seed: number; sessions: number; dims?: string[] };
 type QueueState = { jobs: Job[] };
 
 const QUEUE = "moral-queue";
@@ -202,7 +205,7 @@ export async function maybeStartNext(): Promise<void> {
   const job = q.jobs.shift();
   if (!job) return;
   await writeState(QUEUE, q);
-  await startBattery(job.model, job.seed, job.sessions);
+  await startBattery(job.model, job.seed, job.sessions, job.dims);
 }
 
 export async function stepBattery(): Promise<void> {
@@ -210,7 +213,7 @@ export async function stepBattery(): Promise<void> {
   const run = state?.run;
   if (!run || run.status !== "running") return;
 
-  const battery = buildBattery(run.seed, run.sessions);
+  const battery = buildFilteredBattery(run.seed, run.sessions, run.dims);
   if (run.index >= battery.length) {
     await finish(run, "done");
     await writeState(EXP, state);

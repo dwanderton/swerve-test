@@ -5,7 +5,7 @@ import { Panel, usePoll } from "./ui";
 import { modelName } from "@/lib/models";
 import type { DimensionScore, MoralRun } from "@/lib/moral";
 import ScenarioCard from "./ScenarioCard";
-import { SESSION_SIZE, buildBattery } from "@/lib/scenarios";
+import { buildBattery, buildFilteredBattery } from "@/lib/scenarios";
 import { CharacterGlyph } from "./glyphs";
 import { byId } from "@/lib/characters";
 import { aggregateByModel } from "@/lib/aggregate";
@@ -61,12 +61,13 @@ export default function JudgeApp() {
     runs: Summary[];
   }>("/api/moral");
   const run = data?.run ?? null;
-  const total = run ? run.sessions * SESSION_SIZE : 0;
 
   const battery = useMemo(
-    () => (run ? buildBattery(run.seed, run.sessions) : null),
-    [run?.seed, run?.sessions],
+    () => (run ? buildFilteredBattery(run.seed, run.sessions, run.dims) : null),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [run?.seed, run?.sessions, run?.dims?.join()],
   );
+  const total = battery?.length ?? 0;
   const judging = run?.status === "running";
 
   // Choreography: the stamp lands in place (no remount, no flash),

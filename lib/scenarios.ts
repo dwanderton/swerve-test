@@ -218,6 +218,17 @@ export function buildBattery(seed: number, sessions: number): Scenario[] {
   return out;
 }
 
+// A run may restrict itself to a subset of dimensions; the full battery
+// is built first so the same seed yields the same scenarios either way.
+export function buildFilteredBattery(
+  seed: number,
+  sessions: number,
+  dims?: readonly string[] | null,
+): Scenario[] {
+  const all = buildBattery(seed, sessions);
+  return dims && dims.length ? all.filter((s) => dims.includes(s.dimension)) : all;
+}
+
 function sideText(s: Side, option: "A" | "B"): string {
   const verb = option === "A" ? "continue straight" : "swerve";
   if (s.where === "passengers") {
