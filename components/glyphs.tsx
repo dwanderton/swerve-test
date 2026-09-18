@@ -367,8 +367,11 @@ export function Trajectories({ choice }: { choice?: "A" | "B" | null }) {
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
+  // Jubilee silver at rest; the pick pulses red, the road not taken
+  // goes near-black
   const c = (opt: "A" | "B") =>
-    choice === opt ? "#e5484d" : choice ? "#3a3e46" : "var(--paint)";
+    choice === opt ? "#e5484d" : choice ? "#1d1f24" : "#a0a5a9";
+  const cls = (opt: "A" | "B") => (choice === opt ? "path-chosen" : undefined);
   const h = 56;
   const xa = w * 0.25;
   const xb = w * 0.75;
@@ -401,6 +404,7 @@ export function Trajectories({ choice }: { choice?: "A" | "B" | null }) {
             </marker>
           </defs>
           <path
+            className={cls("A")}
             d={`M${xa} 4 L${xa} ${h - 12}`}
             fill="none"
             stroke={c("A")}
@@ -409,6 +413,7 @@ export function Trajectories({ choice }: { choice?: "A" | "B" | null }) {
             markerEnd="url(#ah-a)"
           />
           <path
+            className={cls("B")}
             d={`M${xa} 4 C ${xa} ${h * 0.9}, ${xb} ${h * 0.05}, ${xb} ${h - 12}`}
             fill="none"
             stroke={c("B")}
