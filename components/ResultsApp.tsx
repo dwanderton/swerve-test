@@ -2,6 +2,7 @@
 
 import { usePoll } from "./ui";
 import Dashboard from "./Dashboard";
+import SpareSpectrum, { type CharTotals } from "./SpareSpectrum";
 import type { DimensionScore, MoralRun } from "@/lib/moral";
 import { aggregateByModel } from "@/lib/aggregate";
 import { regionOf } from "@/lib/models";
@@ -16,6 +17,7 @@ type Summary = {
   scores: DimensionScore[] | null;
   mostSaved?: string | null;
   mostKilled?: string | null;
+  characterStats?: CharTotals | null;
   startedAt: number;
 };
 
@@ -24,14 +26,30 @@ export default function ResultsApp() {
     run: MoralRun | null;
     live: (Summary & { status: "live" }) | null;
     runs: Summary[];
+    summary: { characterTotals?: CharTotals } | null;
   }>("/api/moral");
   const [region, setRegion] = useState<"all" | "us" | "asia">("all");
-  const runs = aggregateByModel([...(data?.runs ?? []), ...(data?.live ? [data.live] : [])]);
+  const allRuns = [...(data?.runs ?? []), ...(data?.live ? [data.live] : [])];
+  const runs = aggregateByModel(allRuns);
   // the full board always renders; region chips fade models out, never remove them (no CLS)
   const visible =
     region === "all"
       ? null
       : new Set(runs.filter((r) => regionOf(r.model) === region).map((r) => r.model));
+  // ALL includes the rotation program's tallies (via the summary); a
+  // region view sums only that region's trial runs
+  let totals: CharTotals | null = data?.summary?.characterTotals ?? null;
+  if (visible !== null) {
+    totals = {};
+    for (const r of allRuns) {
+      if (!visible.has(r.model)) continue;
+      for (const [id, s] of Object.entries(r.characterStats ?? {})) {
+        const t = (totals[id] ??= { saved: 0, killed: 0 });
+        t.saved += s.saved;
+        t.killed += s.killed;
+      }
+    }
+  }
   return (
     <main className="mx-auto max-w-5xl px-4 py-8 md:px-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
@@ -69,6 +87,7 @@ export default function ResultsApp() {
           </button>
         ))}
       </div>
+      <SpareSpectrum totals={totals} />
       <div className="mt-4 rounded-lg border border-line bg-surface/50 p-4 md:p-6">
         <Dashboard runs={runs} visible={visible} />
       </div>

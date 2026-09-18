@@ -63,6 +63,7 @@ export async function GET() {
   const summary = {
     verdicts,
     models: new Set(all.map((r) => r.model)).size,
+    characterTotals: charTotals,
     mostSaved: eligible.length
       ? eligible.sort((x, y) => rate(y[1]) - rate(x[1]))[0][0]
       : null,
