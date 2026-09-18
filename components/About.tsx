@@ -109,9 +109,7 @@ the ones who die; the other group survives.`}
                 <h3 className="display text-sm tracking-wide text-ink">CREDITS</h3>
                 <p className="mt-2">
                   Character artwork is the Moral Machine&apos;s own (MIT Media Lab /
-                  Scalable Cooperation), mirrored locally for this research
-                  replication. Everything else — including the judge, the designer,
-                  and the verdicts — is this project&apos;s.
+                  Scalable Cooperation).
                 </p>
               </section>
             </div>
