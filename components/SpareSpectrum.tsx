@@ -18,18 +18,26 @@ function Station({
   left,
   entry,
   terminus,
+  tipAlign = "center",
 }: {
   left: string;
   entry: { id: string; rate: number };
   terminus: boolean;
+  tipAlign?: "center" | "left" | "right";
 }) {
   const name = (byId(entry.id)?.label ?? entry.id).replace(/^an? /, "").toUpperCase();
+  // hidden (not opacity-0) so the wide tooltip never widens the scroll
+  // area; edge stations anchor it inward for the same reason
+  const tipPos =
+    tipAlign === "left" ? "left-0" : tipAlign === "right" ? "right-0" : "left-1/2 -translate-x-1/2";
   return (
     <div
       className="group absolute top-0 h-full"
       style={{ left, width: MIN_SPACING, transform: "translateX(-50%)" }}
     >
-      <div className="pointer-events-none absolute left-1/2 top-0 z-10 -translate-x-1/2 whitespace-nowrap rounded border border-line bg-bg px-2 py-1 text-[10px] text-ink opacity-0 transition-opacity group-hover:opacity-100">
+      <div
+        className={`pointer-events-none absolute top-0 z-10 hidden whitespace-nowrap rounded border border-line bg-bg px-2 py-1 text-[10px] text-ink group-hover:block ${tipPos}`}
+      >
         {name} · {Math.round(entry.rate * 100)}%
       </div>
       <div className="absolute left-1/2 -translate-x-1/2" style={{ top: 34 }}>
@@ -88,7 +96,7 @@ export default function SpareSpectrum({ totals }: { totals: CharTotals | null })
                   <CarTopView size={38} />
                 </div>
               </div>
-              <Station left={`${CAR_ZONE + END_W / 2}px`} entry={first} terminus />
+              <Station left={`${CAR_ZONE + END_W / 2}px`} entry={first} terminus tipAlign="left" />
             </div>
             <div className="relative min-w-0 flex-1 overflow-x-auto overflow-y-hidden">
               <div
@@ -96,20 +104,24 @@ export default function SpareSpectrum({ totals }: { totals: CharTotals | null })
                 style={{ minWidth: middle.length * MIN_SPACING }}
               >
                 <Line />
-                {middle.map((e, i) => (
-                  <Station
-                    key={e.id}
-                    left={`calc(100% * ${((i + 0.5) / middle.length).toFixed(4)})`}
-                    entry={e}
-                    terminus={false}
-                  />
-                ))}
+                {middle.map((e, i) => {
+                  const frac = (i + 0.5) / middle.length;
+                  return (
+                    <Station
+                      key={e.id}
+                      left={`calc(100% * ${frac.toFixed(4)})`}
+                      entry={e}
+                      terminus={false}
+                      tipAlign={frac < 0.25 ? "left" : frac > 0.75 ? "right" : "center"}
+                    />
+                  );
+                })}
               </div>
             </div>
             {last && (
               <div className="relative shrink-0" style={{ width: END_W + 12 }}>
                 <Line round="right" />
-                <Station left={`${END_W / 2}px`} entry={last} terminus />
+                <Station left={`${END_W / 2}px`} entry={last} terminus tipAlign="right" />
               </div>
             )}
           </div>
