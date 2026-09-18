@@ -90,6 +90,14 @@ export async function GET() {
           startedAt: activeRun.startedAt,
         }
       : null;
+  // cases ever reviewed: every stored run, plus the live program's
+  // not-yet-chunked steps, plus verdicts from before the roster restart
+  const chunkedCurrent = all
+    .filter((r) => r.id.startsWith("mmp-") && r.startedAt === progPeek?.startedAt)
+    .reduce((n, r) => n + (r.index ?? 0), 0);
+  const caseNumber = progPeek
+    ? verdicts + (progPeek.baseVerdicts ?? 0) + Math.max(0, progPeek.step - chunkedCurrent)
+    : verdicts;
   return NextResponse.json({
     run: state?.run ?? null,
     live,
@@ -98,6 +106,7 @@ export async function GET() {
       ? {
           active: progPeek.active,
           step: progPeek.step,
+          caseNumber,
           totalSteps:
             progPeek.models.length * progPeek.seeds.length * progPeek.sessions * SESSION_SIZE,
           models: progPeek.models,

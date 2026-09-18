@@ -35,6 +35,7 @@ type HomeSummary = {
 type ProgramInfo = {
   active: boolean;
   step: number;
+  caseNumber?: number;
   totalSteps: number;
   models: string[];
   currentModel: string;
@@ -321,7 +322,7 @@ function ProgramTheater({ program }: { program: ProgramInfo }) {
                 : `a dilemma testing ${scenario.testedLabel}`}
             </div>
             <span className="text-[10px] tracking-[0.2em] text-ink-faint">
-              CASE #{program.step.toLocaleString()}
+              CASE #{(program.caseNumber ?? program.step).toLocaleString()}
             </span>
           </div>
           <ScenarioCard

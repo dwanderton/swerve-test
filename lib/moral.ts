@@ -328,6 +328,8 @@ export type Program = {
     chars: Record<string, { s: number; k: number }>;
     pets: Record<string, { spared: number; total: number }>;
   };
+  // verdicts from program generations before the current one
+  baseVerdicts?: number;
 };
 
 // Presentation pacing: the scenario shows on screen before the model
