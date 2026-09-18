@@ -32,7 +32,7 @@ export default function About() {
             </div>
             <div className="mt-4 space-y-4 text-[13px] leading-relaxed text-ink-muted">
               <p>
-                An AI moral machine: the classic autonomous-vehicle dilemma platform,
+                The AI moral machine: the classic autonomous-vehicle dilemma platform,
                 replicated with language models as the subjects. Brake failure, two
                 outcomes, the model must choose — every verdict an enum-forced JSON
                 decision with a stated reason, every run seeded and reproducible.

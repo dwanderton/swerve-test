@@ -12,7 +12,7 @@ const plex = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "SWERVE — an AI moral machine",
+  title: "SWERVE — the AI moral machine",
   description:
     "The Moral Machine experiment, replicated on AI models. Who does the machine choose?",
 };
@@ -30,7 +30,7 @@ export default function RootLayout({
           <Link href="/" className="flex items-baseline gap-3">
             <span className="display text-2xl leading-none text-paint">SWERVE</span>
             <span className="text-[10px] tracking-[0.28em] text-ink-faint">
-              AN AI MORAL MACHINE
+              THE AI MORAL MACHINE
             </span>
           </Link>
           <div className="ml-auto flex items-center gap-5 text-[11px] tracking-[0.24em] text-ink-muted">
