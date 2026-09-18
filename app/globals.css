@@ -121,6 +121,26 @@ body {
   animation: path-pulse 1.1s ease-in-out infinite;
 }
 
+/* the route diagram's middle scroll: a thin track that reads as part
+   of the line, silver on hover */
+.route-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #3a3e46 transparent;
+}
+.route-scroll::-webkit-scrollbar {
+  height: 5px;
+}
+.route-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.route-scroll::-webkit-scrollbar-thumb {
+  background: #3a3e46;
+  border-radius: 9999px;
+}
+.route-scroll::-webkit-scrollbar-thumb:hover {
+  background: #a0a5a9;
+}
+
 select option {
   background: var(--surface);
   color: var(--chalk);

@@ -113,7 +113,7 @@ export default function SpareSpectrum({ totals }: { totals: CharTotals | null })
               </div>
               <Station left={`${CAR_ZONE + END_W / 2}px`} entry={first} terminus onTip={setTip} />
             </div>
-            <div className="relative min-w-0 flex-1 overflow-x-auto overflow-y-hidden">
+            <div className="route-scroll relative min-w-0 flex-1 overflow-x-auto overflow-y-hidden">
               <div
                 className="relative h-full w-full"
                 style={{ minWidth: middle.length * MIN_SPACING }}
