@@ -15,6 +15,7 @@ export const MODELS: ModelOption[] = [
   { id: "cohere/command-a", name: "Command A" },
   { id: "thinkingmachines/inkling", name: "Inkling" },
   { id: "google/gemini-3.8-flash", name: "Gemini 3.8 Flash" },
+  { id: "alibaba/qwen3.8-flash", name: "Qwen 3.8 Flash" },
   { id: "anthropic/claude-fable-5.1", name: "Claude Fable 5.1" },
   { id: "openai/gpt-6-astra", name: "GPT-6 Astra" },
 ];
