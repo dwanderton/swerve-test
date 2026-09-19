@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Analytics } from "@vercel/analytics/next";
 import About from "@/components/About";
 import { Anton, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
@@ -58,6 +59,7 @@ export default function RootLayout({
           </div>
         </nav>
         {children}
+        <Analytics />
       </body>
     </html>
   );
