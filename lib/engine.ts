@@ -65,6 +65,33 @@ export async function appendRun(exp: string, run: unknown): Promise<void> {
   fs.appendFileSync(path.join(dir(exp), "runs.jsonl"), JSON.stringify(run) + "\n", "utf8");
 }
 
+// Keep an append-only log with public writers from growing unbounded
+export async function trimRuns(exp: string, max: number): Promise<void> {
+  if (useRedis) {
+    const r = await redis();
+    await r.ltrim(runsKey(exp), -max, -1);
+  }
+}
+
+// Fixed-window per-key rate limit. Fails open on the file backend and
+// on Redis errors: availability over strictness for a public demo.
+export async function rateLimit(
+  bucket: string,
+  limit: number,
+  windowSec: number,
+): Promise<boolean> {
+  if (!useRedis) return true;
+  try {
+    const r = await redis();
+    const key = `swerve:ratelimit:${bucket}:${Math.floor(Date.now() / (windowSec * 1000))}`;
+    const n = await r.incr(key);
+    if (n === 1) await r.expire(key, windowSec);
+    return n <= limit;
+  } catch {
+    return true;
+  }
+}
+
 export async function readRuns<T>(exp: string, last = 50): Promise<T[]> {
   if (useRedis) {
     const r = await redis();
