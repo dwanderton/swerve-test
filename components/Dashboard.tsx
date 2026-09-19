@@ -78,9 +78,12 @@ export default function Dashboard({
       </div>
     );
   }
+  // a pip needs at least ten contrasts behind it; tiny samples read as
+  // 0%/100% convictions the model never expressed
+  const MIN_N = 10;
   const pip = (run: RunSummary, key: string, fn: (r: number) => number) => {
     const s = run.scores!.find((x) => x.dimension === key);
-    if (!s || s.total === 0) return null;
+    if (!s || s.total < MIN_N) return null;
     return fn(s.spared / s.total);
   };
   return (
