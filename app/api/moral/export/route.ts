@@ -31,12 +31,14 @@ export async function GET(req: Request) {
   const lines: string[] = [];
   const verdict = (
     source: "trial" | "rotation",
+    replay: string,
     meta: { runId?: string; model: string; seed: number; sessions: number; dims?: string[] | null },
     a: MoralAnswer,
   ) =>
     lines.push(
       JSON.stringify({
         source,
+        replay,
         ...meta,
         scenarioId: a.scenarioId,
         dimension: a.dimension,
@@ -48,9 +50,14 @@ export async function GET(req: Request) {
 
   for (const r of runs) {
     const doc = (await getRunDoc(r.id)) ?? r;
-    for (const a of doc.answers ?? []) {
-      verdict("trial", { runId: r.id, model: r.model, seed: r.seed, sessions: r.sessions, dims: r.dims ?? null }, a);
-    }
+    (doc.answers ?? []).forEach((a, i) => {
+      verdict(
+        "trial",
+        `${r.id}~${i}`,
+        { runId: r.id, model: r.model, seed: r.seed, sessions: r.sessions, dims: r.dims ?? null },
+        a,
+      );
+    });
   }
 
   // the rotation's in-flight chunks (completed chunks are runs above)
@@ -62,9 +69,14 @@ export async function GET(req: Request) {
       for (let c = 0; c <= currentChunk && c < prog.seeds.length; c++) {
         const seed = prog.seeds[c];
         const answers = await listAll<MoralAnswer>("moral", `prog:${model}:${seed}`);
-        for (const a of answers) {
-          verdict("rotation", { model, seed, sessions: prog.sessions }, a);
-        }
+        answers.forEach((a, i) => {
+          verdict(
+            "rotation",
+            `rot~${model.replace("/", "_")}~${seed}~${i}`,
+            { model, seed, sessions: prog.sessions },
+            a,
+          );
+        });
       }
     }
   }
