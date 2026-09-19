@@ -219,6 +219,7 @@ export default function DesignerApp() {
               verdict={choice ? (choice === "A" ? "KILLED" : "SPARED") : null}
               onDrop={drop("A")}
               onRemove={removeFrom("A")}
+              onToggleLegal={() => { setResult(null); setA({ ...a, legal: !a.legal }); }}
             />
             <LaneSettings draft={a} onChange={(d) => { setResult(null); setA(d); }} />
           </div>
@@ -230,6 +231,7 @@ export default function DesignerApp() {
               verdict={choice ? (choice === "B" ? "KILLED" : "SPARED") : null}
               onDrop={drop("B")}
               onRemove={removeFrom("B")}
+              onToggleLegal={() => { setResult(null); setB({ ...b, legal: !b.legal }); }}
             />
             <LaneSettings draft={b} onChange={(d) => { setResult(null); setB(d); }} />
           </div>
@@ -269,12 +271,14 @@ function DraggableLane({
   verdict,
   onDrop,
   onRemove,
+  onToggleLegal,
 }: {
   draft: SideDraft;
   option: "A" | "B";
   verdict: "KILLED" | "SPARED" | null;
   onDrop: (payload: string) => void;
   onRemove: (index: number) => void;
+  onToggleLegal: () => void;
 }) {
   // placed figures are draggable between lanes
   return (
@@ -290,6 +294,7 @@ function DraggableLane({
         verdict={verdict}
         onRemove={onRemove}
         onDropChar={onDrop}
+        onToggleLegal={draft.where === "pedestrians" ? onToggleLegal : undefined}
       />
     </div>
   );
