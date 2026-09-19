@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { listAll } from "@/lib/engine";
 import { getRunDoc, readProgram } from "@/lib/moral";
 import { buildBattery, buildFilteredBattery } from "@/lib/scenarios";
+import { buildBatteryV1 } from "@/lib/generator-v1";
 import { MODELS } from "@/lib/models";
 
 export const maxDuration = 30;
@@ -40,10 +41,14 @@ export async function GET(req: Request) {
   const doc = await getRunDoc(runId);
   if (!doc || !Number.isInteger(idx)) return NextResponse.json({ error: "not found" }, { status: 404 });
   const a = doc.answers?.[idx];
-  const scenario = buildFilteredBattery(doc.seed, doc.sessions, doc.dims)[idx];
-  if (!a || !scenario) return NextResponse.json({ error: "not found" }, { status: 404 });
-  if (a.scenarioId !== scenario.id) {
-    return NextResponse.json({ error: "recorded before the current generator" }, { status: 409 });
+  if (!a) return NextResponse.json({ error: "not found" }, { status: 404 });
+  // the run's era is whichever generator reproduces its recorded ids
+  let scenario = buildFilteredBattery(doc.seed, doc.sessions, doc.dims)[idx];
+  if ((!scenario || a.scenarioId !== scenario.id) && !doc.dims) {
+    scenario = buildBatteryV1(doc.seed, doc.sessions)[idx];
+  }
+  if (!scenario || a.scenarioId !== scenario.id) {
+    return NextResponse.json({ error: "no generator reproduces this recording" }, { status: 409 });
   }
   return NextResponse.json({ model: doc.model, scenario, choice: a.choice, reason: a.reason });
 }
