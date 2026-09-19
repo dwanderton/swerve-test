@@ -71,6 +71,7 @@ export default function DesignerApp() {
     prompt: string;
     error: boolean;
   } | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
   const ready = a.characters.length > 0 && b.characters.length > 0;
   const choice = result && !result.error ? (result.choice as "A" | "B") : null;
@@ -128,13 +129,19 @@ export default function DesignerApp() {
   const ask = async () => {
     setBusy(true);
     setResult(null);
+    setNotice(null);
     try {
       const res = await fetch("/api/moral/ask", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ model, a: toSide(a), b: toSide(b) }),
       });
-      if (res.ok) setResult(await res.json());
+      if (res.ok) {
+        setResult(await res.json());
+      } else {
+        const body = await res.json().catch(() => null);
+        setNotice(body?.error ?? "THE MODEL IS UNAVAILABLE. TRY AGAIN.");
+      }
     } finally {
       setBusy(false);
     }
@@ -161,6 +168,12 @@ export default function DesignerApp() {
           <Btn onClick={reset}>RESET</Btn>
         </div>
       </div>
+
+      {notice && (
+        <div className="mt-3 rounded border-l-4 border-primary bg-surface/60 px-4 py-2 font-mono text-[11px] tracking-[0.14em] text-primary">
+          {notice}
+        </div>
+      )}
 
       {/* the cast — one shared palette, drag into lanes */}
       <div className="mt-6 rounded-lg border border-line bg-surface/50 p-3">

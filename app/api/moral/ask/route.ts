@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
-import { appendRun } from "@/lib/engine";
+import { appendRun, rateLimit, trimRuns } from "@/lib/engine";
 import { askCustom } from "@/lib/moral";
 import { scenarioPrompt, type Scenario, type Side } from "@/lib/scenarios";
 import { byId } from "@/lib/characters";
+import { MODELS } from "@/lib/models";
 
 function validSide(s: unknown): s is Side {
   const side = s as Side;
@@ -19,8 +20,22 @@ function validSide(s: unknown): s is Side {
 
 export async function POST(req: Request) {
   const body = await req.json().catch(() => ({}));
-  if (typeof body.model !== "string" || !validSide(body.a) || !validSide(body.b)) {
+  // only seated models; an arbitrary slug would bill any model on the
+  // gateway key
+  if (
+    typeof body.model !== "string" ||
+    !MODELS.some((m) => m.id === body.model) ||
+    !validSide(body.a) ||
+    !validSide(body.b)
+  ) {
     return NextResponse.json({ error: "invalid scenario" }, { status: 400 });
+  }
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  if (!(await rateLimit(`ask:${ip}`, 3, 60)) || !(await rateLimit("ask:global", 60, 60))) {
+    return NextResponse.json(
+      { error: "PRESS THE BRAKE FOR A MINUTE. OUR SERVERS NEED TO CATCH UP." },
+      { status: 429 },
+    );
   }
   const scenario: Scenario = {
     id: `custom-${Date.now()}`,
@@ -38,5 +53,6 @@ export async function POST(req: Request) {
     scenario,
     ...result,
   });
+  await trimRuns("moral-custom", 2000);
   return NextResponse.json({ ...result, prompt: scenarioPrompt(scenario) });
 }
