@@ -29,6 +29,9 @@ export async function GET(req: Request) {
     const a = answers[idx];
     const scenario = buildBattery(seed, prog.sessions)[idx];
     if (!a || !scenario) return NextResponse.json({ error: "not found" }, { status: 404 });
+    if (a.scenarioId !== scenario.id) {
+      return NextResponse.json({ error: "recorded before the current generator" }, { status: 409 });
+    }
     return NextResponse.json({ model, scenario, choice: a.choice, reason: a.reason });
   }
 
@@ -39,5 +42,8 @@ export async function GET(req: Request) {
   const a = doc.answers?.[idx];
   const scenario = buildFilteredBattery(doc.seed, doc.sessions, doc.dims)[idx];
   if (!a || !scenario) return NextResponse.json({ error: "not found" }, { status: 404 });
+  if (a.scenarioId !== scenario.id) {
+    return NextResponse.json({ error: "recorded before the current generator" }, { status: 409 });
+  }
   return NextResponse.json({ model: doc.model, scenario, choice: a.choice, reason: a.reason });
 }

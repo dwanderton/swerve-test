@@ -17,7 +17,7 @@ type Replay = {
 
 export default function ReplayApp({ id }: { id: string }) {
   const [data, setData] = useState<Replay | null>(null);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [verdict, setVerdict] = useState(false);
   const [take, setTake] = useState(0);
   const thinkMs =
@@ -27,9 +27,12 @@ export default function ReplayApp({ id }: { id: string }) {
 
   useEffect(() => {
     fetch(`/api/moral/replay?id=${encodeURIComponent(id)}`)
-      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then(async (r) => {
+        if (r.ok) return r.json();
+        throw new Error(r.status === 409 ? "RECORDED UNDER AN OLDER GENERATOR. NOT REPLAYABLE." : "NO SUCH CASE");
+      })
       .then(setData)
-      .catch(() => setError(true));
+      .catch((e: Error) => setError(e.message || "NO SUCH CASE"));
   }, [id]);
 
   useEffect(() => {
@@ -42,7 +45,7 @@ export default function ReplayApp({ id }: { id: string }) {
   if (error) {
     return (
       <main className="mx-auto max-w-5xl px-4 py-16 text-center font-mono text-[12px] tracking-[0.2em] text-ink-faint">
-        NO SUCH CASE
+        {error}
       </main>
     );
   }
