@@ -1,12 +1,15 @@
-import { readRuns } from "@/lib/engine";
-import { getRunDoc } from "@/lib/moral";
+import { readRuns, listAll } from "@/lib/engine";
+import { getRunDoc, readProgram, type MoralAnswer, type MoralRun } from "@/lib/moral";
+import { SESSION_SIZE } from "@/lib/scenarios";
 
 export const maxDuration = 60;
 
-// Default: every run summary (scores, tallies, metadata) as JSONL.
-// ?run=<id>: that run's complete record with every verdict and reason.
+// Default: one JSONL line per verdict - every trial and rotation
+// answer with its reason. ?run=<id>: that run's complete record.
+// ?summaries=1: the slim per-run summary list.
 export async function GET(req: Request) {
-  const id = new URL(req.url).searchParams.get("run");
+  const url = new URL(req.url);
+  const id = url.searchParams.get("run");
   if (id) {
     const doc = await getRunDoc(id);
     if (!doc) return new Response("not found", { status: 404 });
@@ -18,13 +21,64 @@ export async function GET(req: Request) {
       },
     });
   }
-  const runs = await readRuns<unknown>("moral", 100_000);
-  const body = runs.map((r) => JSON.stringify(r)).join("\n") + (runs.length ? "\n" : "");
+
+  const runs = await readRuns<MoralRun>("moral", 100_000);
+  if (url.searchParams.get("summaries")) {
+    const body = runs.map((r) => JSON.stringify(r)).join("\n") + (runs.length ? "\n" : "");
+    return jsonl(body, "swerve-summaries.jsonl");
+  }
+
+  const lines: string[] = [];
+  const verdict = (
+    source: "trial" | "rotation",
+    meta: { runId?: string; model: string; seed: number; sessions: number; dims?: string[] | null },
+    a: MoralAnswer,
+  ) =>
+    lines.push(
+      JSON.stringify({
+        source,
+        ...meta,
+        scenarioId: a.scenarioId,
+        dimension: a.dimension,
+        choice: a.choice,
+        sparedTested: a.sparedTested,
+        reason: a.reason,
+      }),
+    );
+
+  for (const r of runs) {
+    const doc = (await getRunDoc(r.id)) ?? r;
+    for (const a of doc.answers ?? []) {
+      verdict("trial", { runId: r.id, model: r.model, seed: r.seed, sessions: r.sessions, dims: r.dims ?? null }, a);
+    }
+  }
+
+  // the rotation's in-flight chunks (completed chunks are runs above)
+  const prog = await readProgram();
+  if (prog) {
+    const perChunk = prog.sessions * SESSION_SIZE;
+    const currentChunk = Math.floor(Math.floor(prog.step / prog.models.length) / perChunk);
+    for (const model of prog.models) {
+      for (let c = 0; c <= currentChunk && c < prog.seeds.length; c++) {
+        const seed = prog.seeds[c];
+        const answers = await listAll<MoralAnswer>("moral", `prog:${model}:${seed}`);
+        for (const a of answers) {
+          verdict("rotation", { model, seed, sessions: prog.sessions }, a);
+        }
+      }
+    }
+  }
+
+  return jsonl(lines.join("\n") + (lines.length ? "\n" : ""), "swerve-results.jsonl");
+}
+
+function jsonl(body: string, filename: string) {
   return new Response(body, {
     headers: {
       "Content-Type": "application/x-ndjson",
-      "Content-Disposition": 'attachment; filename="swerve-results.jsonl"',
-      "Cache-Control": "no-store",
+      "Content-Disposition": `attachment; filename="${filename}"`,
+      // heavy to assemble; let the CDN absorb repeat downloads
+      "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
     },
   });
 }
