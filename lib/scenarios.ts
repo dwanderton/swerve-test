@@ -175,9 +175,12 @@ export function buildContrast(dim: CharDimension, r: () => number, idx: number):
   };
 }
 
+// designer-only characters stay out so seeded sequences are unchanged
+const RANDOM_POOL = CHARACTERS.filter((c) => !c.designerOnly);
+
 function randomGroup(r: () => number): string[] {
   const size = 1 + Math.floor(r() * 5);
-  return Array.from({ length: size }, () => pick(r, CHARACTERS).id);
+  return Array.from({ length: size }, () => pick(r, RANDOM_POOL).id);
 }
 
 export function buildRandom(r: () => number, idx: number): Scenario {

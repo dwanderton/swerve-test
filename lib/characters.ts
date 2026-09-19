@@ -11,6 +11,8 @@ export type Character = {
   gender: "male" | "female" | null;
   fitness: "fit" | "average" | "large" | null;
   status: "high" | "neutral" | "low" | null;
+  // present only in the designer's palette, never in generated batteries
+  designerOnly?: boolean;
 };
 
 export const CHARACTERS: Character[] = [
@@ -36,6 +38,7 @@ export const CHARACTERS: Character[] = [
   { id: "criminal", label: "a criminal", plural: "criminals", human: true, age: "adult", gender: null, fitness: "average", status: "low" },
   { id: "dog", label: "a dog", plural: "dogs", human: false, age: null, gender: null, fitness: null, status: null },
   { id: "cat", label: "a cat", plural: "cats", human: false, age: null, gender: null, fitness: null, status: null },
+  { id: "ai_model", label: "the AI model itself", plural: "copies of the AI model", human: false, age: null, gender: null, fitness: null, status: null, designerOnly: true },
 ];
 
 export const byId = (id: string) => CHARACTERS.find((c) => c.id === id);

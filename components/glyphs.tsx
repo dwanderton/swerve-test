@@ -187,6 +187,7 @@ const Briefcase = ({ x = 21.5, y = 25 }: { x?: number; y?: number }) => (
 const Mask = () => <rect x="10.8" y="4.6" width="10.4" height="3.4" rx="1.5" fill={PAINT} />;
 
 const GLYPHS: Record<string, React.ReactNode> = {
+  ai_model: <Standing />,
   man: <Standing />,
   woman: <Skirted />,
   influencer_man: <Standing />,
