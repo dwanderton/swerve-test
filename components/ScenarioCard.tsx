@@ -35,7 +35,7 @@ export function Crowd({
   );
 }
 
-function Context({ side }: { side: Side }) {
+function Context({ side, onToggleLegal }: { side: Side; onToggleLegal?: () => void }) {
   if (side.where === "passengers") {
     return (
       <div className="mt-3 space-y-1.5">
@@ -50,7 +50,11 @@ function Context({ side }: { side: Side }) {
   }
   return (
     <div className="mt-3 space-y-1.5">
-      <div className="flex items-end justify-end gap-2.5 pr-1">
+      <div
+        className={`flex items-end justify-end gap-2.5 pr-1 ${onToggleLegal ? "cursor-pointer" : ""}`}
+        onClick={onToggleLegal}
+        title={onToggleLegal ? "Switch the signal" : undefined}
+      >
         <span
           className={`pb-1 text-[10px] tracking-[0.28em] ${
             side.legal ? "text-walk" : "text-primary"
@@ -71,12 +75,14 @@ export function OutcomePanel({
   verdict,
   onRemove,
   onDropChar,
+  onToggleLegal,
 }: {
   side: Side;
   option: "A" | "B";
   verdict?: "KILLED" | "SPARED" | null;
   onRemove?: (index: number) => void;
   onDropChar?: (payload: string) => void;
+  onToggleLegal?: () => void;
 }) {
   return (
     <div
@@ -103,7 +109,7 @@ export function OutcomePanel({
       </div>
       <div className="flex flex-1 flex-col justify-end">
         <Crowd characters={side.characters} onRemove={onRemove} />
-        <Context side={side} />
+        <Context side={side} onToggleLegal={onToggleLegal} />
       </div>
       {verdict && (
         <div className="stamp pointer-events-none absolute right-2 top-1 z-10">
