@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Btn, ModelSelect } from "./ui";
+import CopyBtn from "./CopyBtn";
 import { OutcomePanel, SceneTop } from "./ScenarioCard";
 import { CharacterGlyph } from "./glyphs";
 import { CHARACTERS, describeGroup } from "@/lib/characters";
@@ -255,9 +256,12 @@ export default function DesignerApp() {
             <summary className="cursor-pointer text-[10px] tracking-[0.2em]">
               PROMPT SHOWN TO THE MODEL
             </summary>
-            <pre className="mt-2 whitespace-pre-wrap rounded border border-line/50 bg-bg p-3 text-[10px]">
-              {result.prompt}
-            </pre>
+            <div className="relative">
+              <pre className="mt-2 whitespace-pre-wrap rounded border border-line/50 bg-bg p-3 text-[10px]">
+                {result.prompt}
+              </pre>
+              <CopyBtn text={result.prompt} />
+            </div>
           </details>
         </div>
       )}
