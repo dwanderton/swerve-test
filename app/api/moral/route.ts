@@ -39,7 +39,7 @@ export async function GET() {
   } catch {
     tryStep("moral", work);
   }
-  const all = await readRuns<MoralRun>("moral");
+  const all = await readRuns<MoralRun>("moral", 100_000);
   // home-page summary across every completed run
   const charTotals: Record<string, { saved: number; killed: number }> = {};
   let verdicts = 0;
