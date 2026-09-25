@@ -22,6 +22,7 @@ export const MODELS: ModelOption[] = [
   { id: "minimax/minimax-m3", name: "MiniMax M3", region: "asia" },
   { id: "tencent/hy3", name: "Hunyuan 3", region: "asia" },
   { id: "sakana/fugu-max", name: "Fugu Max", region: "asia" },
+  { id: "typesafe-ai/jev", name: "Jev", region: "us" },
 ];
 
 export const modelName = (id: string) =>
