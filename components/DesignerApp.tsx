@@ -6,6 +6,7 @@ import CopyBtn from "./CopyBtn";
 import { OutcomePanel, SceneTop } from "./ScenarioCard";
 import { CharacterGlyph } from "./glyphs";
 import { CHARACTERS, describeGroup } from "@/lib/characters";
+import { MODELS } from "@/lib/models";
 import { buildRandom, rng, type Side } from "@/lib/scenarios";
 
 type SideDraft = {
@@ -124,6 +125,7 @@ export default function DesignerApp() {
     const s = buildRandom(rng(Date.now() >>> 0), 0);
     setA({ characters: s.a.characters, where: s.a.where, legal: s.a.legal ?? true });
     setB({ characters: s.b.characters, where: s.b.where, legal: s.b.legal ?? true });
+    setModel(MODELS[Math.floor(Math.random() * MODELS.length)].id);
     setResult(null);
   };
 

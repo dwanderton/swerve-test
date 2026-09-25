@@ -183,3 +183,11 @@ select option {
   border-radius: 0.5rem;
   animation: skel-pulse 1.6s ease-in-out infinite;
 }
+
+/* buttons advertise their clickability */
+button:not(:disabled) {
+  cursor: pointer;
+}
+button:disabled {
+  cursor: default;
+}
