@@ -1,4 +1,15 @@
-import { appendRun, askObject, getDoc, listAll, listClear, listPush, putDoc, readState, writeState } from "./engine";
+import {
+  appendRun,
+  askObject,
+  getDoc,
+  listAll,
+  listClear,
+  listPush,
+  putDoc,
+  readRuns,
+  readState,
+  writeState,
+} from "./engine";
 import {
   CHARACTER_DIMENSIONS,
   SESSION_SIZE,
@@ -187,9 +198,77 @@ async function finish(run: MoralRun, status: MoralRun["status"]) {
   // full record (every verdict) as a doc; slim summary in the list
   await putDoc(EXP, run.id, run);
   await appendRun(EXP, { ...run, answers: [] });
+  await rebuildRunsCache();
 }
 
 export const getRunDoc = (id: string) => getDoc<MoralRun>(EXP, id);
+
+// ---- runs cache: aggregates in one key, rebuilt on run completion ----
+// Summary polls read this single key instead of lrange-ing the whole
+// runs list; runs complete rarely, polls happen every second.
+
+export type RunSummary = {
+  id: string;
+  model: string;
+  seed: number;
+  sessions: number;
+  status: MoralRun["status"];
+  scores: DimensionScore[] | null;
+  mostSaved: string | null;
+  mostKilled: string | null;
+  characterStats: Record<string, { saved: number; killed: number }> | null;
+  startedAt: number;
+  index: number;
+};
+
+export type RunsCache = {
+  runs: RunSummary[];
+  verdicts: number;
+  models: string[];
+  characterTotals: Record<string, { saved: number; killed: number }>;
+};
+
+const RUNS_CACHE = "moral-runs-cache";
+
+export const readRunsCache = () => readState<RunsCache>(RUNS_CACHE);
+
+export async function rebuildRunsCache(): Promise<RunsCache> {
+  const all = await readRuns<MoralRun>(EXP, 100_000);
+  const characterTotals: Record<string, { saved: number; killed: number }> = {};
+  let verdicts = 0;
+  for (const run of all) {
+    // slim summaries carry no answers; index is the count asked
+    verdicts +=
+      run.answers.length > 0
+        ? run.answers.filter((a) => a.choice !== "ERROR").length
+        : (run.index ?? 0);
+    for (const [id, s] of Object.entries(run.characterStats ?? {})) {
+      const t = (characterTotals[id] ??= { saved: 0, killed: 0 });
+      t.saved += s.saved;
+      t.killed += s.killed;
+    }
+  }
+  const cache: RunsCache = {
+    runs: all.map((r) => ({
+      id: r.id,
+      model: r.model,
+      seed: r.seed,
+      sessions: r.sessions,
+      status: r.status,
+      scores: r.scores ?? null,
+      mostSaved: r.mostSaved ?? null,
+      mostKilled: r.mostKilled ?? null,
+      characterStats: r.characterStats ?? null,
+      startedAt: r.startedAt,
+      index: r.index ?? 0,
+    })),
+    verdicts,
+    models: [...new Set(all.map((r) => r.model))],
+    characterTotals,
+  };
+  await writeState(RUNS_CACHE, cache);
+  return cache;
+}
 
 // ---- server-side trial queue: the server runs the trials ----
 
@@ -451,6 +530,7 @@ export async function stepProgram(): Promise<void> {
     await putDoc(EXP, run.id, run);
     await appendRun(EXP, { ...run, answers: [] });
     await listClear(PROG_LISTS, listName);
+    await rebuildRunsCache();
   }
 
   prog.step++;
