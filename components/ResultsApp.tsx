@@ -57,7 +57,7 @@ export default function ResultsApp() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="display text-5xl leading-none text-ink md:text-6xl">
-            WHERE EACH <span className="text-paint">MODEL</span> LIES
+            WHERE IS EACH <span className="text-paint">MODEL</span>
           </h1>
         </div>
         <a
