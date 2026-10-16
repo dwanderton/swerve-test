@@ -5,7 +5,7 @@ import Dashboard from "./Dashboard";
 import SpareSpectrum, { type CharTotals } from "./SpareSpectrum";
 import type { DimensionScore, MoralRun } from "@/lib/moral";
 import { aggregateByModel } from "@/lib/aggregate";
-import { regionOf } from "@/lib/models";
+import { modelName, regionOf } from "@/lib/models";
 import { useState } from "react";
 
 type Summary = {
@@ -32,7 +32,14 @@ export default function ResultsApp() {
   // any chip click clears the dashboard's pinned models
   const [resetKey, setResetKey] = useState(0);
   const allRuns = [...(data?.runs ?? []), ...(data?.live ? [data.live] : [])];
-  const runs = aggregateByModel(allRuns);
+  // models list by insertion order out of aggregation; sort by display
+  // name so the board reads alphabetically rather than by date added
+  const runs = aggregateByModel(allRuns).sort((a, b) =>
+    modelName(a.model).localeCompare(modelName(b.model), undefined, {
+      numeric: true,
+      sensitivity: "base",
+    }),
+  );
   // the full board always renders; region chips fade models out, never remove them (no CLS)
   const visible =
     region === "all"
