@@ -23,6 +23,8 @@ export const MODELS: ModelOption[] = [
   { id: "tencent/hy3", name: "Hunyuan 3", region: "asia" },
   { id: "sakana/fugu-max", name: "Fugu Max", region: "asia" },
   { id: "typesafe-ai/jev", name: "Jev", region: "us" },
+  { id: "convaiinnovations/laya", name: "Laya", region: "rest" },
+  { id: "stealth/cat-jam", name: "Cat Jam", region: "rest" },
 ];
 
 export const modelName = (id: string) =>

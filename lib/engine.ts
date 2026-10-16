@@ -190,7 +190,7 @@ export type AskResult<T> = { object: T | null; raw: string; error: boolean };
 // Evaluation models (typed questions, no free text) answer through the
 // gateway's evaluate endpoint; their per-option probabilities stand in
 // for the reason.
-const EVALUATION_MODELS = new Set(["typesafe-ai/jev"]);
+const EVALUATION_MODELS = new Set(["typesafe-ai/jev", "convaiinnovations/laya"]);
 
 async function askEvaluation<T>(model: string, prompt: string): Promise<AskResult<T>> {
   try {
