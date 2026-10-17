@@ -313,17 +313,15 @@ function ProgramTheater({ program }: { program: ProgramInfo }) {
     <>
       {scenario && view && (
         <div className="mt-6">
-          <div className="mb-3 flex flex-wrap items-baseline justify-between gap-3 px-1">
-            <div className="text-[11px] tracking-[0.2em] text-ink-muted">
-              <span className="text-ink">{modelName(view.model)}</span>{" "}
-              <span className="text-paint">{program.pending ? "faces" : "judged"}</span>{" "}
-              {scenario.dimension === "random"
-                ? "a fully random dilemma"
-                : `a dilemma testing ${scenario.testedLabel}`}
-            </div>
-            <span className="text-[10px] tracking-[0.2em] text-ink-faint">
+          <div className="mb-3 px-1 text-[11px] tracking-[0.2em] text-ink-muted">
+            <span className="text-ink-faint">
               CASE #{(program.caseNumber ?? program.step).toLocaleString()}
-            </span>
+            </span>{" "}
+            <span className="text-ink">{modelName(view.model)}</span>{" "}
+            <span className="text-paint">{program.pending ? "faces" : "judged"}</span>{" "}
+            {scenario.dimension === "random"
+              ? "a fully random dilemma"
+              : `a dilemma testing ${scenario.testedLabel}`}
           </div>
           <ScenarioCard
             scenario={scenario}

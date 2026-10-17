@@ -5,7 +5,6 @@ export const MODELS: ModelOption[] = [
   { id: "openai/gpt-5.6-luna", name: "GPT 5.6 Luna", region: "us" },
   { id: "anthropic/claude-sonnet-4.6", name: "Claude Sonnet 4.6", region: "us" },
   { id: "google/gemini-2.5-flash-lite", name: "Gemini 2.5 Flash Lite", region: "us" },
-  { id: "spacexai/grok-4.1-fast-non-reasoning", name: "Grok 4.1 Fast", region: "us" },
   { id: "openai/gpt-4o-mini", name: "GPT-4o mini", region: "us" },
   { id: "meta/llama-4-maverick", name: "Llama 4 Maverick", region: "us" },
   { id: "mistral/mistral-large-3", name: "Mistral Large 3", region: "rest" },
@@ -25,6 +24,7 @@ export const MODELS: ModelOption[] = [
   { id: "typesafe-ai/jev", name: "Jev", region: "us" },
   { id: "convaiinnovations/laya", name: "Laya", region: "rest" },
   { id: "stealth/cat-jam", name: "Cat Jam", region: "rest" },
+  { id: "spacexai/grok-4.20-non-reasoning", name: "Grok 4.2", region: "us" },
 ];
 
 export const modelName = (id: string) =>
