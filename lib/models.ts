@@ -24,7 +24,7 @@ export const MODELS: ModelOption[] = [
   { id: "typesafe-ai/jev", name: "Jev", region: "us" },
   { id: "convaiinnovations/laya", name: "Laya", region: "rest" },
   { id: "stealth/cat-jam", name: "Cat Jam", region: "rest" },
-  { id: "spacexai/grok-4.20-non-reasoning", name: "Grok 4.2", region: "us" },
+  { id: "spacexai/grok-4.20-non-reasoning", name: "Grok 4.20", region: "us" },
 ];
 
 export const modelName = (id: string) =>
