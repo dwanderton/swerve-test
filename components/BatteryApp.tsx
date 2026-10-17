@@ -315,7 +315,10 @@ function ProgramTheater({ program }: { program: ProgramInfo }) {
         <div className="mt-6">
           <div className="mb-3 px-1 text-[11px] tracking-[0.2em] text-ink-muted">
             <span className="text-ink-faint">
-              CASE #{(program.caseNumber ?? program.step).toLocaleString()}
+              CASE #
+              {(
+                (program.caseNumber ?? program.step) + (program.pending ? 1 : 0)
+              ).toLocaleString()}
             </span>{" "}
             <span className="text-ink">{modelName(view.model)}</span>{" "}
             <span className="text-paint">{program.pending ? "faces" : "judged"}</span>{" "}
