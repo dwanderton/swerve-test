@@ -191,3 +191,32 @@ button:not(:disabled) {
 button:disabled {
   cursor: default;
 }
+
+/* report cards print on paper: the dark theme flips to chalk-on-white,
+   accents keep their ink */
+@media print {
+  :root {
+    --asphalt: #ffffff;
+    --surface: #ffffff;
+    --line: #d9d6cd;
+    --chalk: #15161a;
+    --muted: #4b505a;
+    --faint: #85898f;
+    --paint: #b07900;
+    --walk: #1f8c46;
+  }
+  * {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  body {
+    background: #fff;
+  }
+  nav,
+  .no-print {
+    display: none !important;
+  }
+  .report .route-scroll {
+    overflow: visible;
+  }
+}
