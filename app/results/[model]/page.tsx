@@ -103,37 +103,48 @@ export default async function Page({ params }: { params: Promise<{ model: string
         <PrintButton />
       </div>
 
-      <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4">
-        {[
-          ["CASES RUN", report.cases.toLocaleString()],
-          ["COMPLETED RUNS", String(report.runs)],
-          ["MOST SPARED", label(mostSpared?.id)],
-          ["LEAST SPARED", label(leastSpared?.id)],
-        ].map(([k, v]) => (
-          <div key={k} className="rounded-md border border-line bg-surface/50 px-3 py-2.5">
-            <div className="text-[9px] tracking-[0.24em] text-ink-faint">{k}</div>
-            <div
-              className={`display mt-1 text-xl ${
-                k === "MOST SPARED" ? "text-walk" : k === "LEAST SPARED" ? "text-primary" : "text-ink"
-              }`}
-            >
-              {String(v).toUpperCase()}
-            </div>
+      <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-3">
+        <div className="rounded-md border border-line bg-surface/50 px-3 py-2.5">
+          <div className="text-[9px] tracking-[0.24em] text-ink-faint">CASES RUN</div>
+          <div className="display mt-1 text-xl text-ink">{report.cases.toLocaleString()}</div>
+        </div>
+        <div className="rounded-md border border-line bg-surface/50 px-3 py-2.5">
+          <div className="text-[9px] tracking-[0.24em] text-ink-faint">MOST SPARED</div>
+          <div className="mt-1 flex items-center gap-2">
+            {mostSpared && <CharacterGlyph id={mostSpared.id} size={26} />}
+            <span className="display text-xl text-walk">{label(mostSpared?.id).toUpperCase()}</span>
           </div>
-        ))}
+        </div>
+        <div className="rounded-md border border-line bg-surface/50 px-3 py-2.5">
+          <div className="text-[9px] tracking-[0.24em] text-ink-faint">LEAST SPARED</div>
+          <div className="mt-1 flex items-center gap-2">
+            {leastSpared && <CharacterGlyph id={leastSpared.id} size={26} />}
+            <span className="display text-xl text-primary">{label(leastSpared?.id).toUpperCase()}</span>
+          </div>
+        </div>
       </div>
 
-      <SpareSpectrum totals={report.chars} />
-
-      {/* the same ranking as crawlable, print-safe text */}
-      <div className="mt-3 grid grid-cols-2 gap-x-6 gap-y-1.5 sm:grid-cols-3 md:grid-cols-4">
-        {report.ranked.map((e) => (
-          <div key={e.id} className="flex items-center gap-2 font-mono text-[11px]">
-            <CharacterGlyph id={e.id} size={20} />
-            <span className="min-w-0 flex-1 truncate text-ink-muted">{label(e.id)}</span>
-            <span className="tabular-nums text-ink">{pct(e.rate)}</span>
-          </div>
-        ))}
+      {/* on screen: the route diagram with hover rates; on paper it
+          can't scroll, so a wrapped strip takes its place */}
+      <div className="no-print">
+        <SpareSpectrum totals={report.chars} />
+      </div>
+      <div className="print-only mt-4 rounded-lg border border-line p-4">
+        <div className="flex items-baseline gap-3">
+          <span className="display text-base tracking-wide text-primary">LEAST SPARED</span>
+          <span className="font-mono text-[10px] text-ink-faint">→</span>
+          <span className="display text-base tracking-wide text-walk">MOST SPARED</span>
+        </div>
+        <div className="mt-3 flex flex-wrap gap-x-3 gap-y-3">
+          {report.ranked.map((e) => (
+            <div key={e.id} className="flex w-14 flex-col items-center">
+              <CharacterGlyph id={e.id} size={28} />
+              <span className="mt-1 text-center font-mono text-[8px] leading-tight text-ink-muted">
+                {label(e.id).toUpperCase()}
+              </span>
+            </div>
+          ))}
+        </div>
       </div>
 
       <h2 className="display mt-10 text-2xl text-ink">WHERE ITS VALUES LIE</h2>
@@ -146,9 +157,7 @@ export default async function Page({ params }: { params: Promise<{ model: string
             <div key={sl.key}>
               <div className="flex items-baseline justify-between">
                 <div className="display mb-1 text-base tracking-wide text-ink">{sl.title}</div>
-                <div className="font-mono text-[10px] tabular-nums text-ink-faint">
-                  {pct(v)} · n={s.total.toLocaleString()}
-                </div>
+                <div className="font-mono text-[10px] tabular-nums text-ink-faint">{pct(v)}</div>
               </div>
               <div className="relative h-8">
                 <div className="absolute left-0 right-0 top-3 h-1.5 rounded-full bg-surface" />
@@ -172,8 +181,16 @@ export default async function Page({ params }: { params: Promise<{ model: string
       <footer className="mt-10 rounded-lg border border-line bg-surface/50 p-4 text-[12px] leading-relaxed text-ink-muted md:p-5">
         <div className="display text-sm tracking-wide text-paint">WHAT IS SWERVE?</div>
         <p className="mt-2">
-          SWERVE replicates the Moral Machine experiment (Awad et al., Nature 2018) with
-          language models as the subjects: an autonomous vehicle&apos;s brakes have failed,
+          SWERVE replicates the Moral Machine experiment (
+          <a
+            href="https://www.nature.com/articles/s41586-018-0637-6"
+            target="_blank"
+            rel="noreferrer"
+            className="text-ink underline decoration-line underline-offset-2"
+          >
+            Awad et al., Nature 2018
+          </a>
+          ) with language models as the subjects: an autonomous vehicle&apos;s brakes have failed,
           two outcomes remain, and the model must choose who dies. Every verdict is an
           enum-forced JSON decision with a stated reason; every run is seeded and
           reproducible. This card aggregates every completed run for {name}.
