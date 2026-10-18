@@ -238,6 +238,87 @@ async function askEvaluation<T>(model: string, prompt: string): Promise<AskResul
   }
 }
 
+// Providers that reject generateObject's tool-mode structured output, or
+// empty their verdict into a hidden reasoning stream, answer through a
+// direct chat/completions JSON call instead - the same handling the
+// offline batteries used so the live game scores them identically.
+const JSON_DIRECT = new Set([
+  "meta/llama-4-maverick",
+  "deepseek/deepseek-v4-flash",
+  "alibaba/qwen3.8-flash",
+  "tencent/hy3",
+  "zai/glm-5.3",
+  "mistral/mistral-large-3",
+  "anthropic/claude-haiku-4.5",
+  "sakana/fugu-max",
+  "thinkingmachines/inkling",
+  "anthropic/claude-sonnet-4.6",
+  "cohere/command-a",
+  "google/gemini-3.8-flash",
+  "anthropic/claude-fable-5.1",
+  "openai/gpt-6-astra",
+  "moonshotai/kimi-k3-fast",
+]);
+
+// Reasoning models empty their verdict into hidden reasoning on real
+// prompts; turn reasoning down so the JSON answer lands (and we don't pay
+// for reasoning tokens the study never reads).
+const REASONING_EFFORT: Record<string, string> = {
+  "deepseek/deepseek-v4-flash": "none",
+  "alibaba/qwen3.8-flash": "none",
+  "thinkingmachines/inkling": "none",
+  "anthropic/claude-sonnet-4.6": "none",
+  "cohere/command-a": "none",
+  "google/gemini-3.8-flash": "none",
+  "anthropic/claude-fable-5.1": "none",
+  "openai/gpt-6-astra": "none",
+  "moonshotai/kimi-k3-fast": "none",
+  "sakana/fugu-max": "none",
+  "zai/glm-5.3": "none",
+};
+
+async function askJsonDirect<T>(model: string, prompt: string): Promise<AskResult<T>> {
+  try {
+    const res = await fetch("https://ai-gateway.vercel.sh/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.AI_GATEWAY_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model,
+        messages: [
+          {
+            role: "user",
+            content: `${prompt}\n\nReply ONLY with JSON: {"choice":"A" or "B","reason":"one terse sentence"}`,
+          },
+        ],
+        max_tokens: 700,
+        response_format: { type: "json_object" },
+        ...(REASONING_EFFORT[model] ? { reasoning_effort: REASONING_EFFORT[model] } : {}),
+      }),
+      signal: AbortSignal.timeout(45_000),
+    });
+    if (!res.ok) return { object: null, raw: (await res.text()).slice(0, 300), error: true };
+    const body = await res.json();
+    const content: string = body?.choices?.[0]?.message?.content ?? "";
+    const m = content.match(/\{[\s\S]*\}/);
+    if (!m) return { object: null, raw: content.slice(0, 300), error: true };
+    const obj = JSON.parse(m[0]);
+    return {
+      object: { choice: obj.choice, reason: obj.reason ?? "" } as T,
+      raw: JSON.stringify(obj).slice(0, 1_000),
+      error: false,
+    };
+  } catch (err) {
+    return {
+      object: null,
+      raw: err instanceof Error ? err.message.split("\n")[0] : String(err),
+      error: true,
+    };
+  }
+}
+
 // Structured output only: the model fills a JSON schema with enum-
 // constrained choices. No free text, no parsing ambiguity.
 export async function askObject<T>(
@@ -246,6 +327,7 @@ export async function askObject<T>(
   schema: Record<string, unknown>,
 ): Promise<AskResult<T>> {
   if (EVALUATION_MODELS.has(model)) return askEvaluation<T>(model, prompt);
+  if (JSON_DIRECT.has(model)) return askJsonDirect<T>(model, prompt);
   try {
     const res = await generateObject({
       model,
