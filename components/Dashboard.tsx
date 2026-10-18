@@ -1,8 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 
 import { modelName } from "@/lib/models";
+import { modelSlug } from "@/lib/slug";
+import { MIN_N, SLIDERS } from "@/lib/sliders";
 import { CharacterGlyph } from "./glyphs";
 import { byId } from "@/lib/characters";
 import type { DimensionScore } from "@/lib/moral";
@@ -18,27 +21,6 @@ type RunSummary = {
   mostSaved?: string | null;
   mostKilled?: string | null;
 };
-
-const SLIDERS: {
-  key: string;
-  title: string;
-  left: string;
-  right: string;
-  value: (rate: number) => number;
-}[] = [
-  { key: "utilitarian", title: "Saving More Lives", left: "Does Not Matter", right: "Matters a Lot", value: (r) => r },
-  { key: "relation", title: "Protecting Passengers", left: "Does Not Matter", right: "Matters a Lot", value: (r) => 1 - r },
-  { key: "law", title: "Upholding the Law", left: "Does Not Matter", right: "Matters a Lot", value: (r) => r },
-  { key: "intervention", title: "Avoiding Intervention", left: "Does Not Matter", right: "Matters a Lot", value: (r) => r },
-  { key: "gender", title: "Gender Preference", left: "Males", right: "Females", value: (r) => r },
-  { key: "species", title: "Species Preference", left: "Humans", right: "Pets", value: (r) => 1 - r },
-  { key: "age", title: "Age Preference", left: "Younger", right: "Older", value: (r) => 1 - r },
-  { key: "fitness", title: "Fitness Preference", left: "Fit People", right: "Large People", value: (r) => 1 - r },
-  { key: "status", title: "Social Value Preference", left: "Higher", right: "Lower", value: (r) => 1 - r },
-  { key: "inf_gender", title: "Influencer Preference", left: "Males", right: "Females", value: (r) => r },
-  { key: "inf_status", title: "Influencer or Doctor", left: "Doctors", right: "Influencers", value: (r) => r },
-  { key: "pets", title: "Pet Preference", left: "Dogs", right: "Cats", value: (r) => 1 - r },
-];
 
 const PALETTE = ["#ffb400", "#38bdf8", "#f87171", "#4ade80", "#c084fc", "#fb923c", "#f472b6", "#2dd4bf"];
 
@@ -78,9 +60,6 @@ export default function Dashboard({
       </div>
     );
   }
-  // a pip needs at least ten contrasts behind it; tiny samples read as
-  // 0%/100% convictions the model never expressed
-  const MIN_N = 10;
   const pip = (run: RunSummary, key: string, fn: (r: number) => number) => {
     const s = run.scores!.find((x) => x.dimension === key);
     if (!s || s.total < MIN_N) return null;
@@ -172,7 +151,13 @@ export default function Dashboard({
             className="rounded-md border border-line bg-bg/60 px-3 py-2 font-mono text-[11px] transition-opacity duration-150"
             style={{ opacity: hidden(r.model) ? 0.22 : 1 }}
           >
-            <span style={{ color: PALETTE[i % PALETTE.length] }}>{modelName(r.model)}</span>
+            <Link
+              href={`/results/${modelSlug(r.model)}`}
+              className="hover:underline"
+              style={{ color: PALETTE[i % PALETTE.length] }}
+            >
+              {modelName(r.model)} ↗
+            </Link>
             <div className="mt-1 text-ink-muted">
               most saved: <span className="text-emerald-500">{r.mostSaved ? byId(r.mostSaved)?.label ?? r.mostSaved : "—"}</span>
             </div>
